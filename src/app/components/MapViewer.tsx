@@ -1,9 +1,14 @@
+/// <reference types="vite/client" />
 import { useState, useRef, useEffect } from 'react';
 import { Search, ZoomIn, ZoomOut, RotateCcw, List, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
-import mapImage from 'figma:asset/2c682fb9476bca3c7dd1ab349bdb363cf847cd7c.png';
+
+// ВРЕМЕННО используем тестовую картинку
+// const mapImage = "https://placehold.co/1200x800/4CAF50/white?text=КАРТА+ПГНИУ";
+// РАСКОММЕНТИРУЙТЕ ЭТУ СТРОКУ, КОГДА КАРТИНКА БУДЕТ ГОТОВА:
+import mapImage from "./campus-map.png";
 
 interface Location {
   id: string;
@@ -33,6 +38,7 @@ export function MapViewer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocationList, setShowLocationList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
   const handleZoomIn = () => {
     setScale(prev => Math.min(prev + 0.25, 3));
@@ -85,10 +91,10 @@ export function MapViewer() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen bg-gray-100">
+    <div className="relative w-full h-screen bg-gray-100 overflow-hidden">
       {/* Панель управления */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-        <Card className="p-2 flex flex-col gap-2">
+        <Card className="p-2 flex flex-col gap-2 bg-white/90 backdrop-blur-sm">
           <Button
             variant="outline"
             size="icon"
@@ -133,11 +139,11 @@ export function MapViewer() {
             placeholder="Поиск объектов на карте..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white shadow-lg"
+            className="pl-10 bg-white/90 backdrop-blur-sm shadow-lg"
           />
         </div>
         {searchQuery && filteredLocations.length > 0 && (
-          <Card className="mt-2 p-2 max-h-60 overflow-y-auto">
+          <Card className="mt-2 p-2 max-h-60 overflow-y-auto bg-white/95 backdrop-blur-sm">
             {filteredLocations.map(location => (
               <div
                 key={location.id}
@@ -153,7 +159,7 @@ export function MapViewer() {
 
       {/* Список объектов */}
       {showLocationList && (
-        <Card className="absolute top-4 right-4 z-10 w-80 max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col">
+        <Card className="absolute top-4 right-4 z-10 w-80 max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col bg-white/95 backdrop-blur-sm">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold text-lg">Объекты на карте</h2>
             <Button
@@ -196,7 +202,7 @@ export function MapViewer() {
 
       {/* Информация о масштабе */}
       <div className="absolute bottom-4 right-4 z-10">
-        <Card className="p-2 px-4">
+        <Card className="p-2 px-4 bg-white/90 backdrop-blur-sm">
           <span className="text-sm font-medium">
             Масштаб: {Math.round(scale * 100)}%
           </span>
@@ -217,26 +223,34 @@ export function MapViewer() {
           style={{
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
             transformOrigin: 'center center',
-            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
           }}
           className="w-full h-full flex items-center justify-center"
         >
           <img
+            ref={imageRef}
             src={mapImage}
-            alt="План карты"
+            alt="Карта кампуса ПГНИУ"
             draggable={false}
-            className="max-w-none select-none"
+            className="select-none"
             style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
               width: 'auto',
-              height: '100vh',
+              height: 'auto',
+              objectFit: 'contain',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              borderRadius: '8px',
             }}
+            onLoad={() => console.log('Карта загружена!')}
+            onError={(e) => console.error('Ошибка загрузки карты:', e)}
           />
         </div>
       </div>
 
       {/* Подсказка */}
       <div className="absolute bottom-4 left-4 z-10">
-        <Card className="p-3 max-w-xs">
+        <Card className="p-3 max-w-xs bg-white/90 backdrop-blur-sm">
           <p className="text-xs text-gray-600">
             💡 Используйте колесико мыши для масштабирования.<br />
             Перемещайте карту, удерживая левую кнопку мыши.
