@@ -1,44 +1,56 @@
 import { useEffect, useRef, useState } from 'react';
 import 'pannellum/build/pannellum.css';
 import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
+import { getPanoramaByPointId, getPanoramasByBuilding } from '../../data/navigationUtils';
 
 interface PanoramaViewerProps {
   buildingId: string;
   buildingName: string;
+  pointId?: number;
   onBack: () => void;
 }
 
-const panoramasConfig: Record<string, { image: string; title: string }> = {
-  '2': {
-    image: '/panoramas/corpus2_hall.jpg',
-    title: 'Холл физического факультета'
-  },
-  '4': {
-    image: '/panoramas/dk.jpg',
-    title: 'Фойе Дворца культуры'
-  },
-  '6': {
-    image: '/panoramas/chem.jpg',
-    title: 'Холл химического факультета'
-  },
-  '8': {
-    image: '/panoramas/geo.jpg',
-    title: 'Музей геологии'
-  },
-};
-
 declare const pannellum: any;
 
-export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaViewerProps) => {
+export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: PanoramaViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pannellumLoaded, setPannellumLoaded] = useState(false);
+  const [panoramaConfig, setPanoramaConfig] = useState<{ image: string; title: string; yaw?: number; pitch?: number } | null>(null);
 
-  const panorama = panoramasConfig[buildingId];
+  const corpusId = parseInt(buildingId);
 
+  // Загружаем конфигурацию панорамы
+  useEffect(() => {
+    let panorama = null;
+    
+    if (pointId) {
+      panorama = getPanoramaByPointId(pointId);
+    }
+    
+    if (!panorama) {
+      const panoramas = getPanoramasByBuilding(corpusId);
+      if (panoramas.length > 0) {
+        panorama = panoramas[0];
+      }
+    }
+
+    if (panorama) {
+      setPanoramaConfig({
+        image: panorama.image_path,
+        title: panorama.title,
+        yaw: panorama.yaw || 0,
+        pitch: panorama.pitch || 0,
+      });
+    } else {
+      setPanoramaConfig(null);
+    }
+  }, [corpusId, pointId]);
+
+  // Загружаем Pannellum
   useEffect(() => {
     if (pannellumLoaded) return;
 
@@ -58,9 +70,9 @@ export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaVie
     }
   }, [pannellumLoaded]);
 
-
+  // Инициализируем панораму
   useEffect(() => {
-    if (!containerRef.current || !panorama || !pannellumLoaded) return;
+    if (!containerRef.current || !panoramaConfig || !pannellumLoaded) return;
     if (!(window as any).pannellum) return;
 
     setIsLoading(true);
@@ -76,8 +88,8 @@ export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaVie
 
       viewerRef.current = pannellumLib.viewer(containerRef.current, {
         type: 'equirectangular',
-        panorama: panorama.image,
-        title: panorama.title,
+        panorama: panoramaConfig.image,
+        title: panoramaConfig.title,
         author: 'ПГНИУ',
         autoLoad: true,
         showZoomCtrl: true,
@@ -85,10 +97,10 @@ export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaVie
         compass: true,
         keyboard: true,
         draggable: true,
-        defaultYaw: 0,
-        defaultPitch: 0,
-        yaw: 0,
-        pitch: 0,
+        defaultYaw: panoramaConfig.yaw || 0,
+        defaultPitch: panoramaConfig.pitch || 0,
+        yaw: panoramaConfig.yaw || 0,
+        pitch: panoramaConfig.pitch || 0,
         hfov: 100,
         minHfov: 50,
         maxHfov: 120,
@@ -118,7 +130,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaVie
         viewerRef.current = null;
       }
     };
-  }, [buildingId, panorama, pannellumLoaded]);
+  }, [panoramaConfig, pannellumLoaded]);
 
   // Полноэкранный режим
   const toggleFullscreen = () => {
@@ -142,7 +154,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaVie
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  if (!panorama) {
+  if (!panoramaConfig) {
     return (
       <div className="w-full h-screen bg-black flex flex-col">
         <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg">
@@ -192,7 +204,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, onBack }: PanoramaVie
           </button>
           <div className="text-center">
             <h2 className="font-semibold text-lg">{buildingName}</h2>
-            <p className="text-xs text-green-100">{panorama.title}</p>
+            <p className="text-xs text-green-100">{panoramaConfig.title}</p>
           </div>
           <button
             onClick={toggleFullscreen}

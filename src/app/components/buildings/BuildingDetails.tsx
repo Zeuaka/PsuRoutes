@@ -1,7 +1,15 @@
-import { ArrowLeft, MapPin, Building2, Navigation, Camera } from 'lucide-react';
+import { ArrowLeft, Building2, Camera, MapPin, Navigation } from 'lucide-react';
 import { Card } from '../ui/card';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
+import { RouteBuilder } from './RouteBuilder';
+import { 
+  getBuildingById, 
+  getFloorsByBuilding, 
+  getPointsByBuilding, 
+  getPanoramasByBuilding,
+  getPanoramaByPointId
+} from '../../data/navigationUtils';
 
 interface BuildingDetailsProps {
   building: { id: string; name: string };
@@ -10,46 +18,73 @@ interface BuildingDetailsProps {
 
 export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
   const [showPanorama, setShowPanorama] = useState(false);
+  const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
+  const [showRouteBuilder, setShowRouteBuilder] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Описания для разных корпусов
-  const getBuildingDescription = (id: string) => {
-    const descriptions: Record<string, string> = {
-      '6': 'Химический факультет. Современные лаборатории, научно-исследовательские центры, кафедры органической и неорганической химии.',
-      '4': 'Студенческий дворец культуры. Главная концертная площадка университета, творческие студии, репетиционные комнаты, большой зрительный зал на 800 мест.',
-      '8': 'Геологический факультет. Музей геологии и картографии, лаборатории ГИС, кафедра туризма, учебные аудитории.',
-      '1': 'Физический факультет. Научные лаборатории, кафедры общей физики, теоретической физики, компьютерные классы.',
-      '12': 'Учебный корпус №12. Лекционные аудитории, семинарские комнаты, компьютерные классы, кафедры гуманитарных наук.',
-      '10': 'Спортивный клуб ПГНИУ. Тренажёрный зал, залы для единоборств, спортивные секции, команды по баскетболу, волейболу, футболу.',
-      '5': 'Филологический факультет. Лекционные аудитории, библиотека, лингафонные кабинеты, кафедры русского языка и литературы.',
-      '2': 'ИКНТ и Биологический факультет. Компьютерные классы, лаборатории биологии, кафедры информационных технологий и биологических наук.',
-      '3': 'Корпус №3. Учебные аудитории, кафедры гуманитарных наук, студенческие пространства.',
-      '9': 'Юридический факультет. Зал судебных заседаний, юридическая клиника, библиотека правовой литературы, кафедры гражданского и уголовного права.',
-      '11': 'Юридический факультет (дополнительный корпус). Учебные аудитории, кафедры, пространства для самостоятельной работы.',
+  const corpusId = parseInt(building.id);
+  const hasData = corpusId === 2;
+  
+  const buildingData = hasData ? getBuildingById(corpusId) : null;
+  const floors = hasData ? getFloorsByBuilding(corpusId) : [];
+  const allPoints = hasData ? getPointsByBuilding(corpusId) : [];
+  const hasPanorama = hasData ? getPanoramasByBuilding(corpusId).length > 0 : false;
+
+  useEffect(() => {
+    setLoading(false);
+  }, [corpusId]);
+
+  const getBuildingDescription = (id: number) => {
+    const descriptions: Record<number, string> = {
+      1: 'Физический факультет. Научные лаборатории, кафедры общей физики, теоретической физики, компьютерные классы.',
+      2: 'ИКНТ и Биологический факультет. Компьютерные классы, лаборатории биологии, кафедры информационных технологий и биологических наук.',
+      4: 'Студенческий дворец культуры. Главная концертная площадка университета, творческие студии, репетиционные комнаты.',
+      6: 'Химический факультет. Современные лаборатории, научно-исследовательские центры.',
+      8: 'Геологический факультет. Музей геологии и картографии, лаборатории ГИС, кафедра туризма.',
     };
     return descriptions[id] || 'Информация о корпусе будет добавлена позже.';
   };
 
-  // Проверяем, есть ли панорама для этого корпуса
-  const hasPanorama = (id: string): boolean => {
-    // Список корпусов, для которых есть панорамы
-    const panoramaBuildings = ['2', '4', '6', '8'];
-    return panoramaBuildings.includes(id);
+  const handleOpenPanorama = (pointId?: number) => {
+    setSelectedPointId(pointId);
+    setShowPanorama(true);
   };
 
-  // Если открыта панорама — показываем её
   if (showPanorama) {
     return (
       <PanoramaViewer
         buildingId={building.id}
         buildingName={building.name}
+        pointId={selectedPointId}
         onBack={() => setShowPanorama(false)}
       />
     );
   }
 
+  if (showRouteBuilder) {
+    return (
+      <RouteBuilder
+        buildingId={corpusId}
+        buildingName={building.name}
+        onBack={() => setShowRouteBuilder(false)}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Загрузка данных корпуса...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex flex-col">
-      {/* Шапка с кнопкой назад */}
+      {/* Шапка */}
       <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
@@ -61,7 +96,7 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
           </button>
           <div>
             <h1 className="text-2xl font-bold">{building.name}</h1>
-            <p className="text-sm text-green-100 mt-1">ID: {building.id}</p>
+            <p className="text-sm text-green-100 mt-1">Корпус №{building.id}</p>
           </div>
         </div>
       </div>
@@ -70,16 +105,33 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Кнопка 360° панорамы */}
-          {hasPanorama(building.id) && (
+          {hasPanorama && (
             <button
-              onClick={() => setShowPanorama(true)}
+              onClick={() => handleOpenPanorama()}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl p-4 shadow-lg transition-all transform hover:scale-[1.02]"
             >
               <div className="flex items-center justify-center gap-3">
                 <Camera className="w-6 h-6" />
                 <div>
                   <div className="font-semibold text-lg">360° виртуальный тур</div>
-                  <div className="text-sm text-blue-100">Осмотрите холл корпуса в панорамном режиме</div>
+                  <div className="text-sm text-blue-100">Осмотрите корпус в панорамном режиме</div>
+                </div>
+                <span className="text-2xl">→</span>
+              </div>
+            </button>
+          )}
+
+          {/* Кнопка построения маршрута */}
+          {hasData && (
+            <button
+              onClick={() => setShowRouteBuilder(true)}
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl p-4 shadow-lg transition-all transform hover:scale-[1.02]"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <Navigation className="w-6 h-6" />
+                <div>
+                  <div className="font-semibold text-lg">Построить маршрут</div>
+                  <div className="text-sm text-green-100">Навигация по корпусу</div>
                 </div>
                 <span className="text-2xl">→</span>
               </div>
@@ -93,39 +145,56 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
               Общая информация
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              {getBuildingDescription(building.id)}
+              {getBuildingDescription(corpusId)}
             </p>
+            {buildingData?.address && (
+              <p className="text-sm text-gray-500 mt-2">📍 {buildingData.address}</p>
+            )}
           </Card>
 
-          {/* Планы этажей */}
-          <Card className="p-6 shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-green-600" />
-              Планы этажей
-            </h2>
-            <div className="bg-gray-100 rounded-xl p-12 text-center border-2 border-dashed border-gray-300">
-              <div className="text-6xl mb-4">🏢</div>
-              <p className="text-gray-500 text-lg">Схемы этажей в разработке</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Для корпуса {building.name} скоро появятся детальные планы
-              </p>
-            </div>
-          </Card>
-
-          {/* Маршруты внутри корпуса */}
-          <Card className="p-6 shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Navigation className="w-5 h-5 text-green-600" />
-              Маршруты внутри корпуса
-            </h2>
-            <div className="bg-gray-100 rounded-xl p-12 text-center border-2 border-dashed border-gray-300">
-              <div className="text-6xl mb-4">📍</div>
-              <p className="text-gray-500 text-lg">Интерактивные маршруты в разработке</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Скоро здесь появятся точки навигации по корпусу
-              </p>
-            </div>
-          </Card>
+          {!hasData ? (
+            <Card className="p-6 shadow-md">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-green-600" />
+                Навигация в разработке
+              </h2>
+              <div className="bg-gray-100 rounded-xl p-12 text-center border-2 border-dashed border-gray-300">
+                <div className="text-6xl mb-4">🚧</div>
+                <p className="text-gray-500 text-lg">Детальная навигация для этого корпуса скоро появится</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Мы работаем над созданием интерактивных карт этажей и маршрутов
+                </p>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Информация о точках */}
+              <Card className="p-6 shadow-md">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-green-600" />
+                  Доступные точки навигации ({allPoints.length})
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {allPoints.slice(0, 9).map(point => (
+                    <div key={point.id} className="p-2 bg-gray-50 rounded-lg text-sm">
+                      <div className="font-medium text-gray-700">{point.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {floors.find(f => f.id === point.floor_id)?.floor_number} этаж
+                      </div>
+                    </div>
+                  ))}
+                  {allPoints.length > 9 && (
+                    <div className="p-2 bg-gray-100 rounded-lg text-sm text-center text-gray-500">
+                      + еще {allPoints.length - 9} точек
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-3 text-center">
+                  Нажмите "Построить маршрут" для навигации
+                </p>
+              </Card>
+            </>
+          )}
         </div>
       </div>
     </div>
