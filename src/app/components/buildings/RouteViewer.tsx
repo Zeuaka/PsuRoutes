@@ -4,15 +4,16 @@ import { useState } from 'react';
 import { FloorMap } from './FloorMap';
 import { PanoramaViewer } from './PanoramaViewer';
 import { Point, Edge, Floor, Panorama } from '../../data/navigationData';
+import './routeViewerStyles.css';
 
 interface RouteViewerProps {
   buildingId: number;
   buildingName: string;
   path: { points: Point[]; edges: Edge[]; totalDistance: number; totalDuration: number };
-  floors: Floor[];           // получаем из родителя
-  allPoints: Point[];        // получаем из родителя
-  allEdges: Edge[];          // получаем из родителя
-  panoramas: Panorama[];     // получаем из родителя
+  floors: Floor[];
+  allPoints: Point[];
+  allEdges: Edge[];
+  panoramas: Panorama[];
   onBack: () => void;
   onNewRoute: () => void;
 }
@@ -37,13 +38,11 @@ export const RouteViewer = ({
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
   const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
   
-  // Фильтруем точки для текущего этажа
   const pointsOnCurrentFloor = allPoints.filter(p => {
     const pointFloor = floors.find(f => f.id === p.floor_id);
     return pointFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
   });
 
-  // Фильтруем связи для текущего этажа
   const edgesOnCurrentFloor = path.edges.filter(edge => {
     const fromPoint = allPoints.find(p => p.id === edge.from_point_id);
     const toPoint = allPoints.find(p => p.id === edge.to_point_id);
@@ -53,7 +52,6 @@ export const RouteViewer = ({
            toFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
   });
 
-  // Создаём путь, где текущая точка подсвечивается особым цветом
   const enhancedPath = {
     ...path,
     points: path.points.map((point, idx) => ({
@@ -126,44 +124,44 @@ export const RouteViewer = ({
   }
 
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex flex-col">
+    <div className="route-viewer-container">
       {/* Шапка */}
-      <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg flex-shrink-0">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button onClick={onBack} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 transition-all">
-            <ArrowLeft className="w-5 h-5" />
+      <div className="route-viewer-header">
+        <div className="route-viewer-header-content">
+          <button onClick={onBack} className="route-viewer-back-btn">
+            <ArrowLeft size={20} />
             <span>Назад к корпусу</span>
           </button>
-          <div>
-            <h1 className="text-xl font-bold">{buildingName}</h1>
-            <p className="text-xs text-green-100">Навигация по маршруту</p>
+          <div className="route-viewer-title">
+            <h1>{buildingName}</h1>
+            <p>Навигация по маршруту</p>
           </div>
-          <div className="ml-auto flex items-center gap-2 text-sm bg-white/20 px-3 py-1.5 rounded-lg">
+          <div className="route-viewer-step-counter">
             <span>Шаг {currentStep + 1} из {path.points.length}</span>
           </div>
         </div>
       </div>
 
       {/* Карта */}
-      <div className="flex-1 min-h-0 p-4">
-        <Card className="h-full shadow-md overflow-hidden">
-          <div className="h-full flex flex-col">
-            <div className="flex gap-2 p-3 border-b flex-wrap bg-gray-50 flex-shrink-0">
+      <div className="route-viewer-map-area">
+        <Card className="route-viewer-card">
+          <div className="route-viewer-card-inner">
+            <div className="route-viewer-floor-tabs">
               {floors.map(floor => (
                 <button
                   key={floor.id}
                   onClick={() => setSelectedFloor(floor.floor_number)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`route-viewer-floor-btn ${
                     selectedFloor === floor.floor_number
-                      ? 'bg-green-600 text-white shadow-md'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? 'route-viewer-floor-btn-active'
+                      : 'route-viewer-floor-btn-inactive'
                   }`}
                 >
                   {floor.floor_number} этаж
                 </button>
               ))}
             </div>
-            <div className="flex-1 relative min-h-0">
+            <div className="route-viewer-map-wrapper">
               <FloorMap
                 points={pointsOnCurrentFloor}
                 edges={edgesOnCurrentFloor}
@@ -183,58 +181,62 @@ export const RouteViewer = ({
       </div>
 
       {/* Нижняя панель */}
-      <div className="flex-shrink-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-5xl mx-auto p-4">
-          <Card className="p-4 shadow-md bg-gradient-to-r from-green-50 to-emerald-50 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <button onClick={goToPrevStep} disabled={currentStep === 0} className="p-2 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
-                <ChevronLeft className="w-4 h-4" />
+      <div className="route-viewer-bottom-panel">
+        <div className="route-viewer-bottom-content">
+          <div className="route-viewer-step-card">
+            <div className="route-viewer-step-nav">
+              <button onClick={goToPrevStep} disabled={currentStep === 0} className="route-viewer-nav-btn">
+                <ChevronLeft size={16} />
               </button>
-              <div className="text-center flex-1">
-                <div className="text-xs text-gray-500">Текущая точка</div>
-                <div className="font-semibold text-gray-800 text-base mt-1">{currentPoint?.name}</div>
-                <div className="text-xs text-gray-400">Этаж {currentFloorObj?.floor_number}</div>
+              <div className="route-viewer-current-point">
+                <div className="route-viewer-current-point-label">Текущая точка</div>
+                <div className="route-viewer-current-point-name">{currentPoint?.name}</div>
+                <div className="route-viewer-current-point-floor">Этаж {currentFloorObj?.floor_number}</div>
               </div>
-              <button onClick={goToNextStep} disabled={currentStep === path.points.length - 1} className="p-2 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
-                <ChevronRight className="w-4 h-4" />
+              <button onClick={goToNextStep} disabled={currentStep === path.points.length - 1} className="route-viewer-nav-btn">
+                <ChevronRight size={16} />
               </button>
             </div>
             
             {hasCurrentPanorama && (
-              <button onClick={() => handleOpenPanorama(currentPoint!.id)} className="w-full mt-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm">
-                <Camera className="w-4 h-4" />
+              <button onClick={() => handleOpenPanorama(currentPoint!.id)} className="route-viewer-panorama-btn">
+                <Camera size={16} />
                 <span>360° панорама этой точки</span>
               </button>
             )}
             
             {currentPoint?.description && (
-              <div className="mt-2 p-2 bg-white rounded-lg text-xs text-gray-600">📍 {currentPoint.description}</div>
+              <div className="route-viewer-point-description">
+                📍 {currentPoint.description}
+              </div>
             )}
             
             {currentStep < path.edges.length && path.edges[currentStep] && (
-              <div className="mt-2 p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
-                <Navigation className="w-3 h-3 inline mr-1" />
-                {path.edges[currentStep].direction_text || 'Продолжайте движение'}
-                <span className="block text-xs text-blue-500 mt-0.5">
+              <div className="route-viewer-direction">
+                <div className="route-viewer-direction-text">
+                  <Navigation size={12} className="inline mr-1" />
+                  {path.edges[currentStep].direction_text || 'Продолжайте движение'}
+                </div>
+                <span className="route-viewer-direction-stats">
                   📏 {path.edges[currentStep].distance_meters} м • ⏱️ {formatTime(path.edges[currentStep].duration_minutes)}
                 </span>
               </div>
             )}
             
-            <div className="mt-3 grid grid-cols-2 gap-3 text-center text-sm">
-              <div className="p-2 bg-white rounded-lg">
-                <div className="text-gray-500 text-xs">Всего расстояние</div>
-                <div className="font-semibold text-green-700">{path.totalDistance} м</div>
+            <div className="route-viewer-stats">
+              <div className="route-viewer-stat-card">
+                <div className="route-viewer-stat-label">Всего расстояние</div>
+                <div className="route-viewer-stat-value">{path.totalDistance} м</div>
               </div>
-              <div className="p-2 bg-white rounded-lg">
-                <div className="text-gray-500 text-xs">Общее время</div>
-                <div className="font-semibold text-green-700">{formatTime(path.totalDuration)}</div>
+              <div className="route-viewer-stat-card">
+                <div className="route-viewer-stat-label">Общее время</div>
+                <div className="route-viewer-stat-value">{formatTime(path.totalDuration)}</div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <button onClick={onNewRoute} className="w-full py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2">
-            <Home className="w-4 h-4" />
+          <button onClick={onNewRoute} className="route-viewer-new-route-btn">
+            <Home size={16} />
             Построить новый маршрут
           </button>
         </div>

@@ -1,0 +1,440 @@
+/* src/components/buildings/routeBuilderStyles.css */
+
+/* Контейнер всей страницы */
+.route-builder-container {
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Шапка */
+.route-builder-header {
+  background: linear-gradient(to right, #15803d, #166534);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.route-builder-header-content {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.route-builder-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s;
+}
+
+.route-builder-back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.route-builder-title h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.route-builder-title p {
+  font-size: 0.75rem;
+  color: #bbf7d0;
+}
+
+/* Карта */
+.route-builder-map-area {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
+}
+
+.route-builder-card {
+  height: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.route-builder-card-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Переключатель этажей */
+.route-builder-floor-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  background-color: #f9fafb;
+  flex-shrink: 0;
+}
+
+.route-builder-floor-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.route-builder-floor-btn-active {
+  background-color: #16a34a;
+  color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.route-builder-floor-btn-inactive {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.route-builder-floor-btn-inactive:hover {
+  background-color: #d1d5db;
+}
+
+/* Карта внутри */
+.route-builder-map-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* Нижняя панель */
+.route-builder-bottom-panel {
+  flex-shrink: 0;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.route-builder-bottom-content {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Кнопка панорамы */
+.route-builder-panorama-btn {
+  width: 100%;
+  margin-bottom: 1rem;
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  color: white;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.route-builder-panorama-btn:hover {
+  background: linear-gradient(to right, #1d4ed8, #1e40af);
+  transform: scale(1.02);
+}
+
+.route-builder-panorama-btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.route-builder-panorama-btn-text {
+  font-weight: 600;
+}
+
+/* Заголовок маршрута */
+.route-builder-route-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Сетка выбора точек */
+.route-builder-points-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .route-builder-points-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Блок выбора точки */
+.route-builder-point-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.route-builder-point-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.route-builder-point-selector {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.route-builder-point-selector:hover {
+  border-color: #3b82f6;
+}
+
+.route-builder-point-selector-from {
+  border-color: #3b82f6;
+}
+
+.route-builder-point-selector-to {
+  border-color: #ef4444;
+}
+
+.route-builder-point-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.route-builder-point-selected-from {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.route-builder-point-selected-to {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.route-builder-point-placeholder {
+  color: #9ca3af;
+}
+
+.route-builder-point-check {
+  color: #22c55e;
+}
+
+.route-builder-point-status {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.route-builder-point-status-dot-from {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #3b82f6;
+  border-radius: 9999px;
+}
+
+.route-builder-point-status-dot-to {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #ef4444;
+  border-radius: 9999px;
+}
+
+/* Кнопки действий */
+.route-builder-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.route-builder-build-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background-color: #16a34a;
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.route-builder-build-btn:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.route-builder-build-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.route-builder-reset-btn {
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.route-builder-reset-btn:hover {
+  background-color: #e5e7eb;
+}
+
+/* Подсказка */
+.route-builder-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+/* Модальное окно поиска */
+.route-builder-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.route-builder-modal {
+  background-color: white;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 28rem;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.route-builder-modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.route-builder-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.route-builder-search-container {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.route-builder-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: #9ca3af;
+}
+
+.route-builder-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+.route-builder-search-input:focus {
+  outline: none;
+  ring: 2px solid #22c55e;
+  border-color: #22c55e;
+}
+
+.route-builder-modal-results {
+  overflow: auto;
+  max-height: 60vh;
+  padding: 0.5rem;
+}
+
+.route-builder-search-result {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.route-builder-search-result:hover {
+  background-color: #f3f4f6;
+}
+
+.route-builder-result-name {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.route-builder-result-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.route-builder-no-results {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* Спиннер загрузки */
+.route-builder-spinner {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.route-builder-spinner-inner {
+  text-align: center;
+}
+
+.route-builder-spinner-circle {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid #22c55e;
+  border-top-color: transparent;
+  border-radius: 9999px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.route-builder-spinner-text {
+  color: #6b7280;
+}

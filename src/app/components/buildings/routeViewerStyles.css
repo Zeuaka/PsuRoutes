@@ -1,0 +1,296 @@
+/* src/components/buildings/routeViewerStyles.css */
+
+/* Контейнер всей страницы */
+.route-viewer-container {
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Шапка */
+.route-viewer-header {
+  background: linear-gradient(to right, #15803d, #166534);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.route-viewer-header-content {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.route-viewer-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.route-viewer-back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.route-viewer-title h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.route-viewer-title p {
+  font-size: 0.75rem;
+  color: #bbf7d0;
+}
+
+.route-viewer-step-counter {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+/* Карта */
+.route-viewer-map-area {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
+}
+
+.route-viewer-card {
+  height: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.route-viewer-card-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Переключатель этажей */
+.route-viewer-floor-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  background-color: #f9fafb;
+  flex-shrink: 0;
+}
+
+.route-viewer-floor-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.route-viewer-floor-btn-active {
+  background-color: #16a34a;
+  color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.route-viewer-floor-btn-inactive {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.route-viewer-floor-btn-inactive:hover {
+  background-color: #d1d5db;
+}
+
+/* Карта внутри */
+.route-viewer-map-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* Нижняя панель */
+.route-viewer-bottom-panel {
+  flex-shrink: 0;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.route-viewer-bottom-content {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Информационная карточка текущего шага */
+.route-viewer-step-card {
+  padding: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(to right, #f0fdf4, #ecfdf5);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.route-viewer-step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.route-viewer-nav-btn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: white;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.route-viewer-nav-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.route-viewer-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.route-viewer-current-point {
+  text-align: center;
+  flex: 1;
+}
+
+.route-viewer-current-point-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.route-viewer-current-point-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+  margin-top: 0.25rem;
+}
+
+.route-viewer-current-point-floor {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Кнопка панорамы */
+.route-viewer-panorama-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.route-viewer-panorama-btn:hover {
+  background-color: #1d4ed8;
+}
+
+/* Описание точки */
+.route-viewer-point-description {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+/* Направление движения */
+.route-viewer-direction {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #eff6ff;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: #1e40af;
+}
+
+.route-viewer-direction-text {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.route-viewer-direction-stats {
+  display: block;
+  font-size: 0.75rem;
+  color: #3b82f6;
+  margin-top: 0.125rem;
+}
+
+/* Статистика маршрута */
+.route-viewer-stats {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.route-viewer-stat-card {
+  padding: 0.5rem;
+  background-color: white;
+  border-radius: 0.5rem;
+}
+
+.route-viewer-stat-label {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.route-viewer-stat-value {
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* Кнопка нового маршрута */
+.route-viewer-new-route-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #16a34a;
+  color: white;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border: none;
+}
+
+.route-viewer-new-route-btn:hover {
+  background-color: #15803d;
+}

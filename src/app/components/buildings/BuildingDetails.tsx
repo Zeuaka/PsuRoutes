@@ -21,9 +21,8 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
   const [loading, setLoading] = useState(true);
 
   const corpusId = parseInt(building.id);
-  const hasData = corpusId === 2; // или проверять наличие точек в загруженных данных
+  const hasData = corpusId === 2;
 
-  // Загружаем данные о здании (адрес и т.п.)
   useEffect(() => {
     let cancelled = false;
     async function loadBuilding() {
@@ -35,7 +34,6 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
     return () => { cancelled = true; };
   }, [corpusId]);
 
-  // Загружаем точки/этажи/панорамы для проверки наличия данных
   const { floors, points, panoramas, loading: dataLoading } = useBuildingData(hasData ? corpusId : null);
 
   const hasPanorama = panoramas.length > 0;

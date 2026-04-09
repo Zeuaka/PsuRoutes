@@ -1,4 +1,3 @@
-// src/components/buildings/RouteBuilder.tsx
 import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState } from 'react';
@@ -8,6 +7,7 @@ import { RouteViewer } from './RouteViewer';
 import { useBuildingData } from '../../hooks/useBuildingData';
 import { findShortestPath, PathResult } from '../../data/navigationUtils';
 import { Point } from '../../data/navigationData';
+import './routeBuilderStyles.css';
 
 interface RouteBuilderProps {
   buildingId: number;
@@ -55,24 +55,16 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   };
 
   const handleFindPath = () => {
-  alert('1. Начало функции');
-  if (selectedFromPoint && selectedToPoint && allPoints.length && allEdges.length) {
-    alert('2. Условия выполнены');
-    alert(`3. Начальная: ${selectedFromPoint}, конечная: ${selectedToPoint}`);
-    alert(`4. Точек: ${allPoints.length}, рёбер: ${allEdges.length}`);
-    const result = findShortestPath(allPoints, allEdges, selectedFromPoint, selectedToPoint);
-    if (result) {
-      alert('5. Путь найден');
-      setPathResult(result);
-      setShowRouteViewer(true);
-    } else {
-      alert('5. Путь НЕ найден');
+    if (selectedFromPoint && selectedToPoint && allPoints.length && allEdges.length) {
+      const result = findShortestPath(allPoints, allEdges, selectedFromPoint, selectedToPoint);
+      if (result) {
+        setPathResult(result);
+        setShowRouteViewer(true);
+      } else {
+        alert('Путь не найден');
+      }
     }
-  } else {
-    alert('2. Условия НЕ выполнены');
-  }
-};
-
+  };
 
   const handleResetPath = () => {
     setSelectedFromPoint(null);
@@ -99,33 +91,33 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   if (loading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Загрузка данных корпуса...</p>
+      <div className="route-builder-spinner">
+        <div className="route-builder-spinner-inner">
+          <div className="route-builder-spinner-circle"></div>
+          <p className="route-builder-spinner-text">Загрузка данных корпуса...</p>
         </div>
       </div>
     );
   }
 
   if (showRouteViewer && pathResult) {
-  return (
-    <RouteViewer
-      buildingId={buildingId}
-      buildingName={buildingName}
-      path={pathResult}
-      floors={floors}           // из useBuildingData
-      allPoints={allPoints}     // из useBuildingData
-      allEdges={allEdges}       // из useBuildingData
-      panoramas={panoramas}     // из useBuildingData
-      onBack={() => setShowRouteViewer(false)}
-      onNewRoute={() => {
-        setShowRouteViewer(false);
-        handleResetPath();
-      }}
-    />
-  );
-}
+    return (
+      <RouteViewer
+        buildingId={buildingId}
+        buildingName={buildingName}
+        path={pathResult}
+        floors={floors}
+        allPoints={allPoints}
+        allEdges={allEdges}
+        panoramas={panoramas}
+        onBack={() => setShowRouteViewer(false)}
+        onNewRoute={() => {
+          setShowRouteViewer(false);
+          handleResetPath();
+        }}
+      />
+    );
+  }
 
   if (showPanorama) {
     return (
@@ -139,38 +131,35 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   }
 
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex flex-col">
+    <div className="route-builder-container">
       {/* Шапка */}
-      <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg flex-shrink-0">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
+      <div className="route-builder-header">
+        <div className="route-builder-header-content">
+          <button onClick={onBack} className="route-builder-back-btn">
+            <ArrowLeft size={20} />
             <span>Назад к корпусу</span>
           </button>
-          <div>
-            <h1 className="text-xl font-bold">{buildingName}</h1>
-            <p className="text-xs text-green-100">Построение маршрута</p>
+          <div className="route-builder-title">
+            <h1>{buildingName}</h1>
+            <p>Построение маршрута</p>
           </div>
         </div>
       </div>
 
       {/* Карта */}
-      <div className="flex-1 min-h-0 p-4">
-        <Card className="h-full shadow-md overflow-hidden">
-          <div className="h-full flex flex-col">
+      <div className="route-builder-map-area">
+        <Card className="route-builder-card">
+          <div className="route-builder-card-inner">
             {/* Переключатель этажей */}
-            <div className="flex gap-2 p-3 border-b flex-wrap bg-gray-50 flex-shrink-0">
+            <div className="route-builder-floor-tabs">
               {floors.map(floor => (
                 <button
                   key={floor.id}
                   onClick={() => setSelectedFloor(floor.floor_number)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`route-builder-floor-btn ${
                     selectedFloor === floor.floor_number
-                      ? 'bg-green-600 text-white shadow-md'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? 'route-builder-floor-btn-active'
+                      : 'route-builder-floor-btn-inactive'
                   }`}
                 >
                   {floor.floor_number} этаж
@@ -179,7 +168,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
             </div>
 
             {/* Карта */}
-            <div className="flex-1 relative min-h-0">
+            <div className="route-builder-map-wrapper">
               <FloorMap
                 points={allPoints.filter(p => {
                   const pf = floors.find(f => f.id === p.floor_id);
@@ -200,126 +189,103 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         </Card>
       </div>
 
-      {/* Нижняя панель с выбором маршрута */}
-      <div className="flex-shrink-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-5xl mx-auto p-4">
-          {/* Кнопка 360° панорамы */}
+      {/* Нижняя панель */}
+      <div className="route-builder-bottom-panel">
+        <div className="route-builder-bottom-content">
+          {/* Кнопка панорамы */}
           {hasPanorama && (
-            <button
-              onClick={() => handleOpenPanorama()}
-              className="w-full mb-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl p-3 shadow-lg transition-all transform hover:scale-[1.02]"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Camera className="w-5 h-5" />
-                <span className="font-semibold">360° виртуальный тур</span>
+            <button onClick={() => handleOpenPanorama()} className="route-builder-panorama-btn">
+              <div className="route-builder-panorama-btn-content">
+                <Camera size={20} />
+                <span className="route-builder-panorama-btn-text">360° виртуальный тур</span>
                 <span className="text-xl">→</span>
               </div>
             </button>
           )}
 
-          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-green-600" />
+          <h2 className="route-builder-route-title">
+            <Navigation size={20} className="text-green-600" />
             Построить маршрут
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <div className="route-builder-points-grid">
             {/* Откуда */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <Target className="w-4 h-4 text-blue-500" />
+            <div className="route-builder-point-block">
+              <label className="route-builder-point-label">
+                <Target size={16} className="text-blue-500" />
                 Откуда
               </label>
               <div
-                className="p-2 border rounded-lg bg-white cursor-pointer hover:border-blue-500 transition-colors"
+                className={`route-builder-point-selector ${
+                  selectedFromPoint ? 'route-builder-point-selector-from' : ''
+                }`}
                 onClick={() => openSearch('from')}
               >
                 {selectedFromPoint ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-600 font-medium">{getPointName(selectedFromPoint)}</span>
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  <div className="route-builder-point-selected">
+                    <span className="route-builder-point-selected-from">
+                      {getPointName(selectedFromPoint)}
+                    </span>
+                    <CheckCircle size={16} className="route-builder-point-check" />
                   </div>
                 ) : (
-                  <span className="text-gray-400">Нажмите для выбора точки</span>
+                  <span className="route-builder-point-placeholder">Нажмите для выбора точки</span>
                 )}
               </div>
               {selectedFromPoint && (
-                <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <div className="route-builder-point-status">
+                  <span className="route-builder-point-status-dot-from"></span>
                   Начальная точка выбрана
                 </div>
               )}
             </div>
 
             {/* Куда */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <Target className="w-4 h-4 text-red-500" />
+            <div className="route-builder-point-block">
+              <label className="route-builder-point-label">
+                <Target size={16} className="text-red-500" />
                 Куда
               </label>
               <div
-                className="p-2 border rounded-lg bg-white cursor-pointer hover:border-red-500 transition-colors"
+                className={`route-builder-point-selector ${
+                  selectedToPoint ? 'route-builder-point-selector-to' : ''
+                }`}
                 onClick={() => openSearch('to')}
               >
                 {selectedToPoint ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-red-600 font-medium">{getPointName(selectedToPoint)}</span>
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  <div className="route-builder-point-selected">
+                    <span className="route-builder-point-selected-to">
+                      {getPointName(selectedToPoint)}
+                    </span>
+                    <CheckCircle size={16} className="route-builder-point-check" />
                   </div>
                 ) : (
-                  <span className="text-gray-400">Нажмите для выбора точки</span>
+                  <span className="route-builder-point-placeholder">Нажмите для выбора точки</span>
                 )}
               </div>
               {selectedToPoint && (
-                <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                <div className="route-builder-point-status">
+                  <span className="route-builder-point-status-dot-to"></span>
                   Конечная точка выбрана
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="route-builder-actions">
             <button
               onClick={handleFindPath}
               disabled={!selectedFromPoint || !selectedToPoint}
-              className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              className="route-builder-build-btn"
             >
               Построить маршрут
             </button>
-            <button
-              onClick={handleResetPath}
-              className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-            >
+            <button onClick={handleResetPath} className="route-builder-reset-btn">
               Сбросить
             </button>
           </div>
-          <button
-            onClick={() => {
-              alert(`Начальная точка: ${selectedFromPoint}\nКонечная точка: ${selectedToPoint}`);
-              alert(`Всего точек: ${allPoints.length}\nВсего рёбер: ${allEdges.length}`);
-              
-              const fromEdges = allEdges.filter(e => e.from_point_id === selectedFromPoint || e.to_point_id === selectedFromPoint);
-              alert(`Рёбра от начальной точки:\n${fromEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join('\n')}`);
-              
-              const toEdges = allEdges.filter(e => e.from_point_id === selectedToPoint || e.to_point_id === selectedToPoint);
-              alert(`Рёбра от конечной точки:\n${toEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join('\n')}`);
-              const midEdges = allEdges.filter(e => e.from_point_id === 102 || e.to_point_id === 102);
-              alert(`Рёбра от точки 102:\n${midEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join('\n')}`);
-              const testResult = findShortestPath(allPoints, allEdges, 100, 104);
-              alert(`Тест пути 100→104: ${testResult ? 'НАЙДЕН' : 'НЕ НАЙДЕН'}`);
-              if (testResult) {
-                alert(`Путь: ${testResult.points.map(p => p.name).join(' → ')}`);
-              }
-              const edgesList = allEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join(', ');
-              alert(`Все рёбра: ${edgesList}`);
-            }}
-            
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg"
-          >
-            Отладка
-          </button>
 
-          <p className="text-xs text-gray-400 mt-3 text-center">
+          <p className="route-builder-hint">
             💡 Выберите режим (начало/конец) в правом верхнем углу схемы и нажмите на точку<br />
             🪜 Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
           </p>
@@ -328,40 +294,40 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
       {/* Модальное окно поиска */}
       {showSearchResults && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowSearchResults(false)}>
-          <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b">
-              <h3 className="font-semibold text-lg">
+        <div className="route-builder-modal-overlay" onClick={() => setShowSearchResults(false)}>
+          <div className="route-builder-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="route-builder-modal-header">
+              <h3 className="route-builder-modal-title">
                 {searchTarget === 'from' ? 'Выберите начальную точку' : 'Выберите конечную точку'}
               </h3>
-              <div className="relative mt-2">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="route-builder-search-container">
+                <Search size={16} className="route-builder-search-icon" />
                 <input
                   type="text"
                   placeholder="Поиск..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                  className="route-builder-search-input"
                   autoFocus
                 />
               </div>
             </div>
-            <div className="overflow-auto max-h-[60vh] p-2">
+            <div className="route-builder-modal-results">
               {searchResults.slice(0, 20).map(point => (
                 <div
                   key={point.id}
-                  className="p-3 hover:bg-gray-100 rounded-lg cursor-pointer"
+                  className="route-builder-search-result"
                   onClick={() => handleSearchSelect(point)}
                 >
-                  <div className="font-medium text-gray-800">{point.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="route-builder-result-name">{point.name}</div>
+                  <div className="route-builder-result-desc">
                     Этаж {floors.find(f => f.id === point.floor_id)?.floor_number}
                     {point.description && ` • ${point.description}`}
                   </div>
                 </div>
               ))}
               {searchResults.length === 0 && searchQuery && (
-                <div className="p-4 text-center text-gray-500">Ничего не найдено</div>
+                <div className="route-builder-no-results">Ничего не найдено</div>
               )}
             </div>
           </div>
