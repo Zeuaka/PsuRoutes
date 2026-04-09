@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Point, Edge } from '../../data/navigationUtils';
+import { Point, Edge } from '../../data/navigationData';
 
 interface FloorMapProps {
   points: Point[];

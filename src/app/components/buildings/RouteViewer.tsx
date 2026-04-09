@@ -1,38 +1,41 @@
-import { ArrowLeft, MapPin, Navigation, ChevronLeft, ChevronRight, Home, Camera } from 'lucide-react';
+import { ArrowLeft, Navigation, ChevronLeft, ChevronRight, Home, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FloorMap } from './FloorMap';
 import { PanoramaViewer } from './PanoramaViewer';
-import { 
-  getFloorsByBuilding, 
-  getPointsByBuilding, 
-  getEdgesByBuilding,
-  getPanoramaByPointId,
-  Point,
-  Edge
-} from '../../data/navigationUtils';
+import { Point, Edge, Floor, Panorama } from '../../data/navigationData';
 
 interface RouteViewerProps {
   buildingId: number;
   buildingName: string;
   path: { points: Point[]; edges: Edge[]; totalDistance: number; totalDuration: number };
+  floors: Floor[];           // получаем из родителя
+  allPoints: Point[];        // получаем из родителя
+  allEdges: Edge[];          // получаем из родителя
+  panoramas: Panorama[];     // получаем из родителя
   onBack: () => void;
   onNewRoute: () => void;
 }
 
-export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute }: RouteViewerProps) => {
+export const RouteViewer = ({ 
+  buildingId, 
+  buildingName, 
+  path, 
+  floors, 
+  allPoints, 
+  allEdges, 
+  panoramas,
+  onBack, 
+  onNewRoute 
+}: RouteViewerProps) => {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
 
-  const floors = getFloorsByBuilding(buildingId);
-  const allPoints = getPointsByBuilding(buildingId);
-  const allEdges = getEdgesByBuilding(buildingId);
-
   const currentPoint = path.points[currentStep];
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
-  const hasCurrentPanorama = currentPoint ? getPanoramaByPointId(currentPoint.id) !== undefined : false;
+  const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
   
   // Фильтруем точки для текущего этажа
   const pointsOnCurrentFloor = allPoints.filter(p => {
@@ -59,16 +62,13 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
     }))
   };
 
-  // Навигация по шагам маршрута
   const goToNextStep = () => {
     if (currentStep < path.points.length - 1) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
       const nextPoint = path.points[nextStep];
       const nextPointFloor = floors.find(f => f.id === nextPoint.floor_id);
-      if (nextPointFloor) {
-        setSelectedFloor(nextPointFloor.floor_number);
-      }
+      if (nextPointFloor) setSelectedFloor(nextPointFloor.floor_number);
     }
   };
 
@@ -79,17 +79,13 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
       const prevPoint = path.points[prevStep];
       if (prevPoint) {
         const prevPointFloor = floors.find(f => f.id === prevPoint.floor_id);
-        if (prevPointFloor) {
-          setSelectedFloor(prevPointFloor.floor_number);
-        }
+        if (prevPointFloor) setSelectedFloor(prevPointFloor.floor_number);
       }
     }
   };
 
-  // Обработка перехода между этажами через лестницу
   const handleFloorTransition = (targetFloor: number, fromPointId?: number) => {
     setSelectedFloor(targetFloor);
-    
     if (fromPointId) {
       const nextPointOnTargetFloor = allPoints.find(p => {
         if (p.floor_id !== targetFloor) return false;
@@ -99,12 +95,9 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
         );
         return hasConnection;
       });
-      
       if (nextPointOnTargetFloor) {
         const stepIndex = path.points.findIndex(p => p.id === nextPointOnTargetFloor.id);
-        if (stepIndex !== -1) {
-          setCurrentStep(stepIndex);
-        }
+        if (stepIndex !== -1) setCurrentStep(stepIndex);
       }
     }
   };
@@ -121,7 +114,6 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
     return secs > 0 ? `${mins} мин ${secs} сек` : `${mins} мин`;
   };
 
-  // Если открыта панорама
   if (showPanorama) {
     return (
       <PanoramaViewer
@@ -138,10 +130,7 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
       {/* Шапка */}
       <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg flex-shrink-0">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 transition-all"
-          >
+          <button onClick={onBack} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 transition-all">
             <ArrowLeft className="w-5 h-5" />
             <span>Назад к корпусу</span>
           </button>
@@ -159,7 +148,6 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
       <div className="flex-1 min-h-0 p-4">
         <Card className="h-full shadow-md overflow-hidden">
           <div className="h-full flex flex-col">
-            {/* Переключатель этажей */}
             <div className="flex gap-2 p-3 border-b flex-wrap bg-gray-50 flex-shrink-0">
               {floors.map(floor => (
                 <button
@@ -175,8 +163,6 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
                 </button>
               ))}
             </div>
-            
-            {/* Карта */}
             <div className="flex-1 relative min-h-0">
               <FloorMap
                 points={pointsOnCurrentFloor}
@@ -199,47 +185,30 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
       {/* Нижняя панель */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 shadow-lg">
         <div className="max-w-5xl mx-auto p-4">
-          {/* Информация о текущем шаге */}
           <Card className="p-4 shadow-md bg-gradient-to-r from-green-50 to-emerald-50 mb-4">
             <div className="flex items-center justify-between mb-3">
-              <button
-                onClick={goToPrevStep}
-                disabled={currentStep === 0}
-                className="p-2 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-              >
+              <button onClick={goToPrevStep} disabled={currentStep === 0} className="p-2 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              
               <div className="text-center flex-1">
                 <div className="text-xs text-gray-500">Текущая точка</div>
                 <div className="font-semibold text-gray-800 text-base mt-1">{currentPoint?.name}</div>
                 <div className="text-xs text-gray-400">Этаж {currentFloorObj?.floor_number}</div>
               </div>
-              
-              <button
-                onClick={goToNextStep}
-                disabled={currentStep === path.points.length - 1}
-                className="p-2 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-              >
+              <button onClick={goToNextStep} disabled={currentStep === path.points.length - 1} className="p-2 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
             
-            {/* Кнопка 360° панорамы для текущей точки */}
             {hasCurrentPanorama && (
-              <button
-                onClick={() => handleOpenPanorama(currentPoint!.id)}
-                className="w-full mt-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm"
-              >
+              <button onClick={() => handleOpenPanorama(currentPoint!.id)} className="w-full mt-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm">
                 <Camera className="w-4 h-4" />
                 <span>360° панорама этой точки</span>
               </button>
             )}
             
             {currentPoint?.description && (
-              <div className="mt-2 p-2 bg-white rounded-lg text-xs text-gray-600">
-                📍 {currentPoint.description}
-              </div>
+              <div className="mt-2 p-2 bg-white rounded-lg text-xs text-gray-600">📍 {currentPoint.description}</div>
             )}
             
             {currentStep < path.edges.length && path.edges[currentStep] && (
@@ -264,11 +233,7 @@ export const RouteViewer = ({ buildingId, buildingName, path, onBack, onNewRoute
             </div>
           </Card>
 
-          {/* Кнопка построить новый маршрут */}
-          <button
-            onClick={onNewRoute}
-            className="w-full py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
-          >
+          <button onClick={onNewRoute} className="w-full py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2">
             <Home className="w-4 h-4" />
             Построить новый маршрут
           </button>

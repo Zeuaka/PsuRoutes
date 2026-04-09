@@ -1,4 +1,3 @@
-// src/components/PanoramaViewer.tsx
 import { useEffect, useRef, useState } from 'react';
 import 'pannellum/build/pannellum.css';
 import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
@@ -24,7 +23,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
 
   const corpusId = parseInt(buildingId);
 
-  // Загружаем конфигурацию панорамы через API
+  // Загружаем конфигурацию панорамы через API (пути уже исправлены в navigationApi)
   useEffect(() => {
     let cancelled = false;
     async function loadPanorama() {
@@ -60,7 +59,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
     if (pannellumLoaded) return;
     if (typeof window !== 'undefined' && !(window as any).pannellum) {
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.7/build/pannellum.js';
       script.onload = () => setPannellumLoaded(true);
       script.onerror = () => {
         setError('Не удалось загрузить библиотеку панорамы');
@@ -86,6 +85,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
+
       viewerRef.current = pannellumLib.viewer(containerRef.current, {
         type: 'equirectangular',
         panorama: panoramaConfig.image,
@@ -97,10 +97,10 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         compass: true,
         keyboard: true,
         draggable: true,
-        defaultYaw: panoramaConfig.yaw || 0,
-        defaultPitch: panoramaConfig.pitch || 0,
-        yaw: panoramaConfig.yaw || 0,
-        pitch: panoramaConfig.pitch || 0,
+        defaultYaw: panoramaConfig.yaw,
+        defaultPitch: panoramaConfig.pitch,
+        yaw: panoramaConfig.yaw,
+        pitch: panoramaConfig.pitch,
         hfov: 100,
         minHfov: 50,
         maxHfov: 120,
@@ -150,10 +150,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
       <div className="w-full h-screen bg-black flex flex-col">
         <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg">
           <div className="px-4 py-3 flex items-center">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm"
-            >
+            <button onClick={onBack} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm">
               <ArrowLeft className="w-4 h-4" />
               <span>Назад</span>
             </button>
@@ -167,9 +164,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
             <div className="text-6xl mb-4">🔄</div>
             <h3 className="text-xl font-semibold mb-2">360° панорама в разработке</h3>
             <p className="text-gray-400">Для корпуса {buildingName} панорама скоро появится</p>
-            <button onClick={onBack} className="mt-6 px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-              Вернуться
-            </button>
+            <button onClick={onBack} className="mt-6 px-6 py-2 bg-green-600 rounded-lg hover:bg-green-700">Вернуться</button>
           </div>
         </div>
       </div>
@@ -180,10 +175,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
     <div className="w-full h-screen bg-black flex flex-col">
       <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg z-10">
         <div className="px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm"
-          >
+          <button onClick={onBack} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm">
             <ArrowLeft className="w-4 h-4" />
             <span>Назад</span>
           </button>
@@ -191,16 +183,12 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
             <h2 className="font-semibold text-lg">{buildingName}</h2>
             <p className="text-xs text-green-100">{panoramaConfig.title}</p>
           </div>
-          <button
-            onClick={toggleFullscreen}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm"
-          >
+          <button onClick={toggleFullscreen} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm">
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             <span className="hidden sm:inline">{isFullscreen ? 'Выход' : 'Во весь экран'}</span>
           </button>
         </div>
       </div>
-
       <div className="flex-1 relative">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
@@ -215,9 +203,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
             <div className="text-center text-white">
               <div className="text-4xl mb-4">⚠️</div>
               <p className="text-red-400">{error}</p>
-              <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700">
-                Вернуться
-              </button>
+              <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700">Вернуться</button>
             </div>
           </div>
         )}

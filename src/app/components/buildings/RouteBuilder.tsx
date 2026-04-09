@@ -55,16 +55,24 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   };
 
   const handleFindPath = () => {
-    if (selectedFromPoint && selectedToPoint && allPoints.length && allEdges.length) {
-      const result = findShortestPath(allPoints, allEdges, selectedFromPoint, selectedToPoint);
-      if (result) {
-        setPathResult(result);
-        setShowRouteViewer(true);
-      } else {
-        alert('Путь не найден');
-      }
+  alert('1. Начало функции');
+  if (selectedFromPoint && selectedToPoint && allPoints.length && allEdges.length) {
+    alert('2. Условия выполнены');
+    alert(`3. Начальная: ${selectedFromPoint}, конечная: ${selectedToPoint}`);
+    alert(`4. Точек: ${allPoints.length}, рёбер: ${allEdges.length}`);
+    const result = findShortestPath(allPoints, allEdges, selectedFromPoint, selectedToPoint);
+    if (result) {
+      alert('5. Путь найден');
+      setPathResult(result);
+      setShowRouteViewer(true);
+    } else {
+      alert('5. Путь НЕ найден');
     }
-  };
+  } else {
+    alert('2. Условия НЕ выполнены');
+  }
+};
+
 
   const handleResetPath = () => {
     setSelectedFromPoint(null);
@@ -101,19 +109,23 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   }
 
   if (showRouteViewer && pathResult) {
-    return (
-      <RouteViewer
-        buildingId={buildingId}
-        buildingName={buildingName}
-        path={pathResult}
-        onBack={() => setShowRouteViewer(false)}
-        onNewRoute={() => {
-          setShowRouteViewer(false);
-          handleResetPath();
-        }}
-      />
-    );
-  }
+  return (
+    <RouteViewer
+      buildingId={buildingId}
+      buildingName={buildingName}
+      path={pathResult}
+      floors={floors}           // из useBuildingData
+      allPoints={allPoints}     // из useBuildingData
+      allEdges={allEdges}       // из useBuildingData
+      panoramas={panoramas}     // из useBuildingData
+      onBack={() => setShowRouteViewer(false)}
+      onNewRoute={() => {
+        setShowRouteViewer(false);
+        handleResetPath();
+      }}
+    />
+  );
+}
 
   if (showPanorama) {
     return (
@@ -281,6 +293,31 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
               Сбросить
             </button>
           </div>
+          <button
+            onClick={() => {
+              alert(`Начальная точка: ${selectedFromPoint}\nКонечная точка: ${selectedToPoint}`);
+              alert(`Всего точек: ${allPoints.length}\nВсего рёбер: ${allEdges.length}`);
+              
+              const fromEdges = allEdges.filter(e => e.from_point_id === selectedFromPoint || e.to_point_id === selectedFromPoint);
+              alert(`Рёбра от начальной точки:\n${fromEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join('\n')}`);
+              
+              const toEdges = allEdges.filter(e => e.from_point_id === selectedToPoint || e.to_point_id === selectedToPoint);
+              alert(`Рёбра от конечной точки:\n${toEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join('\n')}`);
+              const midEdges = allEdges.filter(e => e.from_point_id === 102 || e.to_point_id === 102);
+              alert(`Рёбра от точки 102:\n${midEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join('\n')}`);
+              const testResult = findShortestPath(allPoints, allEdges, 100, 104);
+              alert(`Тест пути 100→104: ${testResult ? 'НАЙДЕН' : 'НЕ НАЙДЕН'}`);
+              if (testResult) {
+                alert(`Путь: ${testResult.points.map(p => p.name).join(' → ')}`);
+              }
+              const edgesList = allEdges.map(e => `${e.from_point_id}→${e.to_point_id} (id:${e.id})`).join(', ');
+              alert(`Все рёбра: ${edgesList}`);
+            }}
+            
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg"
+          >
+            Отладка
+          </button>
 
           <p className="text-xs text-gray-400 mt-3 text-center">
             💡 Выберите режим (начало/конец) в правом верхнем углу схемы и нажмите на точку<br />
