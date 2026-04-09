@@ -1,7 +1,8 @@
+// src/components/PanoramaViewer.tsx
 import { useEffect, useRef, useState } from 'react';
 import 'pannellum/build/pannellum.css';
 import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
-import { getPanoramaByPointId, getPanoramasByBuilding } from '../../data/navigationUtils';
+import { fetchPanoramaByPointId, fetchPanoramasByBuilding } from '../../data/navigationApi';
 
 interface PanoramaViewerProps {
   buildingId: string;
@@ -23,43 +24,44 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
 
   const corpusId = parseInt(buildingId);
 
-  // Загружаем конфигурацию панорамы
+  // Загружаем конфигурацию панорамы через API
   useEffect(() => {
-    let panorama = null;
-    
-    if (pointId) {
-      panorama = getPanoramaByPointId(pointId);
-    }
-    
-    if (!panorama) {
-      const panoramas = getPanoramasByBuilding(corpusId);
-      if (panoramas.length > 0) {
-        panorama = panoramas[0];
+    let cancelled = false;
+    async function loadPanorama() {
+      try {
+        let panorama = null;
+        if (pointId) {
+          panorama = await fetchPanoramaByPointId(pointId);
+        }
+        if (!panorama) {
+          const panoramas = await fetchPanoramasByBuilding(corpusId);
+          if (panoramas.length > 0) panorama = panoramas[0];
+        }
+        if (!cancelled && panorama) {
+          setPanoramaConfig({
+            image: panorama.image_path,
+            title: panorama.title,
+            yaw: panorama.yaw || 0,
+            pitch: panorama.pitch || 0,
+          });
+        } else if (!cancelled) {
+          setPanoramaConfig(null);
+        }
+      } catch (err) {
+        if (!cancelled) setError('Ошибка загрузки панорамы');
       }
     }
-
-    if (panorama) {
-      setPanoramaConfig({
-        image: panorama.image_path,
-        title: panorama.title,
-        yaw: panorama.yaw || 0,
-        pitch: panorama.pitch || 0,
-      });
-    } else {
-      setPanoramaConfig(null);
-    }
+    loadPanorama();
+    return () => { cancelled = true; };
   }, [corpusId, pointId]);
 
   // Загружаем Pannellum
   useEffect(() => {
     if (pannellumLoaded) return;
-
     if (typeof window !== 'undefined' && !(window as any).pannellum) {
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js';
-      script.onload = () => {
-        setPannellumLoaded(true);
-      };
+      script.onload = () => setPannellumLoaded(true);
       script.onerror = () => {
         setError('Не удалось загрузить библиотеку панорамы');
         setIsLoading(false);
@@ -80,12 +82,10 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
 
     try {
       const pannellumLib = (window as any).pannellum;
-
       if (viewerRef.current) {
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
-
       viewerRef.current = pannellumLib.viewer(containerRef.current, {
         type: 'equirectangular',
         panorama: panoramaConfig.image,
@@ -104,18 +104,15 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         hfov: 100,
         minHfov: 50,
         maxHfov: 120,
-        onLoad: () => {
-          setIsLoading(false);
-          console.log('Панорама загружена');
-        },
+        onLoad: () => setIsLoading(false),
         onError: (err: any) => {
-          console.error('Ошибка загрузки панорамы:', err);
+          console.error(err);
           setError('Не удалось загрузить панораму. Проверьте наличие файла.');
           setIsLoading(false);
         },
       });
     } catch (err) {
-      console.error('Ошибка инициализации Pannellum:', err);
+      console.error(err);
       setError('Ошибка инициализации панорамы');
       setIsLoading(false);
     }
@@ -124,19 +121,15 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
       if (viewerRef.current) {
         try {
           viewerRef.current.destroy();
-        } catch (e) {
-          console.error('Ошибка при уничтожении панорамы:', e);
-        }
+        } catch (e) {}
         viewerRef.current = null;
       }
     };
   }, [panoramaConfig, pannellumLoaded]);
 
-  // Полноэкранный режим
   const toggleFullscreen = () => {
     const element = containerRef.current;
     if (!element) return;
-
     if (!document.fullscreenElement) {
       element.requestFullscreen();
       setIsFullscreen(true);
@@ -147,9 +140,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
   };
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
@@ -175,13 +166,8 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
           <div className="text-center">
             <div className="text-6xl mb-4">🔄</div>
             <h3 className="text-xl font-semibold mb-2">360° панорама в разработке</h3>
-            <p className="text-gray-400">
-              Для корпуса {buildingName} панорама скоро появится
-            </p>
-            <button
-              onClick={onBack}
-              className="mt-6 px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-            >
+            <p className="text-gray-400">Для корпуса {buildingName} панорама скоро появится</p>
+            <button onClick={onBack} className="mt-6 px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
               Вернуться
             </button>
           </div>
@@ -192,7 +178,6 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
 
   return (
     <div className="w-full h-screen bg-black flex flex-col">
-      {/* Шапка */}
       <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg z-10">
         <div className="px-4 py-3 flex items-center justify-between">
           <button
@@ -216,7 +201,6 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         </div>
       </div>
 
-      {/* Контейнер для панорамы */}
       <div className="flex-1 relative">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
@@ -231,20 +215,13 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
             <div className="text-center text-white">
               <div className="text-4xl mb-4">⚠️</div>
               <p className="text-red-400">{error}</p>
-              <button
-                onClick={onBack}
-                className="mt-4 px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700"
-              >
+              <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700">
                 Вернуться
               </button>
             </div>
           </div>
         )}
-        <div
-          ref={containerRef}
-          className="w-full h-full"
-          style={{ background: '#000' }}
-        />
+        <div ref={containerRef} className="w-full h-full" style={{ background: '#000' }} />
       </div>
     </div>
   );

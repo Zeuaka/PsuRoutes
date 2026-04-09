@@ -1,15 +1,12 @@
+// src/components/buildings/BuildingDetails.tsx
 import { ArrowLeft, Building2, Camera, MapPin, Navigation } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
 import { RouteBuilder } from './RouteBuilder';
-import { 
-  getBuildingById, 
-  getFloorsByBuilding, 
-  getPointsByBuilding, 
-  getPanoramasByBuilding,
-  getPanoramaByPointId
-} from '../../data/navigationUtils';
+import { useBuildingData } from '../../hooks/useBuildingData';
+import { fetchBuildingById } from '../../data/navigationApi';
+import { Building } from '../../data/navigationData';
 
 interface BuildingDetailsProps {
   building: { id: string; name: string };
@@ -20,19 +17,29 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
   const [showRouteBuilder, setShowRouteBuilder] = useState(false);
+  const [buildingData, setBuildingData] = useState<Building | null>(null);
   const [loading, setLoading] = useState(true);
 
   const corpusId = parseInt(building.id);
-  const hasData = corpusId === 2;
-  
-  const buildingData = hasData ? getBuildingById(corpusId) : null;
-  const floors = hasData ? getFloorsByBuilding(corpusId) : [];
-  const allPoints = hasData ? getPointsByBuilding(corpusId) : [];
-  const hasPanorama = hasData ? getPanoramasByBuilding(corpusId).length > 0 : false;
+  const hasData = corpusId === 2; // или проверять наличие точек в загруженных данных
 
+  // Загружаем данные о здании (адрес и т.п.)
   useEffect(() => {
-    setLoading(false);
+    let cancelled = false;
+    async function loadBuilding() {
+      const data = await fetchBuildingById(corpusId);
+      if (!cancelled) setBuildingData(data);
+      setLoading(false);
+    }
+    loadBuilding();
+    return () => { cancelled = true; };
   }, [corpusId]);
+
+  // Загружаем точки/этажи/панорамы для проверки наличия данных
+  const { floors, points, panoramas, loading: dataLoading } = useBuildingData(hasData ? corpusId : null);
+
+  const hasPanorama = panoramas.length > 0;
+  const allPoints = points;
 
   const getBuildingDescription = (id: number) => {
     const descriptions: Record<number, string> = {
@@ -71,7 +78,7 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
     );
   }
 
-  if (loading) {
+  if (loading || dataLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <div className="text-center">

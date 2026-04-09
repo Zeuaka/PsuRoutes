@@ -1,19 +1,13 @@
-import { ArrowLeft, MapPin, Navigation, Search, Target, CheckCircle, Camera } from 'lucide-react';
+// src/components/buildings/RouteBuilder.tsx
+import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
 import { FloorMap } from './FloorMap';
-import { RouteViewer } from './RouteViewer.tsx';
-import { 
-  getFloorsByBuilding, 
-  getPointsByBuilding, 
-  getPanoramasByBuilding,
-  getPanoramaByPointId,
-  findShortestPath,
-  getEdgesByBuilding,
-  Point,
-  Edge
-} from '../../data/navigationUtils';
+import { RouteViewer } from './RouteViewer';
+import { useBuildingData } from '../../hooks/useBuildingData';
+import { findShortestPath, PathResult } from '../../data/navigationUtils';
+import { Point } from '../../data/navigationData';
 
 interface RouteBuilderProps {
   buildingId: number;
@@ -22,41 +16,29 @@ interface RouteBuilderProps {
 }
 
 export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderProps) => {
+  const { floors, points: allPoints, edges: allEdges, panoramas, loading } = useBuildingData(buildingId);
+
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
-  const [loading, setLoading] = useState(true);
-  
-  // Состояния для маршрута
   const [selectedFromPoint, setSelectedFromPoint] = useState<number | null>(null);
   const [selectedToPoint, setSelectedToPoint] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchTarget, setSearchTarget] = useState<'from' | 'to'>('from');
-  const [pathResult, setPathResult] = useState<{ points: Point[]; edges: Edge[]; totalDistance: number; totalDuration: number } | null>(null);
+  const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [showRouteViewer, setShowRouteViewer] = useState(false);
 
-  const floors = getFloorsByBuilding(buildingId);
-  const allPoints = getPointsByBuilding(buildingId);
-  const allEdges = getEdgesByBuilding(buildingId);
-  const hasPanorama = getPanoramasByBuilding(buildingId).length > 0;
-
-  // Фильтрация точек для поиска
+  const hasPanorama = panoramas.length > 0;
   const searchResults = allPoints.filter(point =>
     point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  useEffect(() => {
-    setLoading(false);
-  }, [buildingId]);
-
-  // Обработка перехода между этажами через лестницу
-  const handleFloorTransition = (targetFloor: number, fromPointId?: number) => {
+  const handleFloorTransition = (targetFloor: number) => {
     setSelectedFloor(targetFloor);
   };
 
-  // Обработка выбора точки из поиска
   const handleSearchSelect = (point: Point) => {
     if (searchTarget === 'from') {
       setSelectedFromPoint(point.id);
@@ -67,19 +49,14 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setShowSearchResults(false);
   };
 
-  // Обработка выбора точки на схеме
   const handlePointSelect = (pointId: number, type: 'from' | 'to') => {
-    if (type === 'from') {
-      setSelectedFromPoint(pointId);
-    } else {
-      setSelectedToPoint(pointId);
-    }
+    if (type === 'from') setSelectedFromPoint(pointId);
+    else setSelectedToPoint(pointId);
   };
 
-  // Построение маршрута и переход в RouteViewer
   const handleFindPath = () => {
-    if (selectedFromPoint && selectedToPoint) {
-      const result = findShortestPath(buildingId, selectedFromPoint, selectedToPoint);
+    if (selectedFromPoint && selectedToPoint && allPoints.length && allEdges.length) {
+      const result = findShortestPath(allPoints, allEdges, selectedFromPoint, selectedToPoint);
       if (result) {
         setPathResult(result);
         setShowRouteViewer(true);
@@ -89,21 +66,18 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     }
   };
 
-  // Сброс маршрута
   const handleResetPath = () => {
     setSelectedFromPoint(null);
     setSelectedToPoint(null);
     setPathResult(null);
   };
 
-  // Открытие поиска
   const openSearch = (target: 'from' | 'to') => {
     setSearchTarget(target);
     setSearchQuery('');
     setShowSearchResults(true);
   };
 
-  // Получение названия точки по ID
   const getPointName = (pointId: number | null) => {
     if (!pointId) return null;
     const point = allPoints.find(p => p.id === pointId);
@@ -115,7 +89,17 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setShowPanorama(true);
   };
 
-  // Если открыт RouteViewer — показываем его
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Загрузка данных корпуса...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (showRouteViewer && pathResult) {
     return (
       <RouteViewer
@@ -139,17 +123,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         pointId={selectedPointId}
         onBack={() => setShowPanorama(false)}
       />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Загрузка данных корпуса...</p>
-        </div>
-      </div>
     );
   }
 
@@ -192,7 +165,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 </button>
               ))}
             </div>
-            
+
             {/* Карта */}
             <div className="flex-1 relative min-h-0">
               <FloorMap
@@ -236,7 +209,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
             <Navigation className="w-5 h-5 text-green-600" />
             Построить маршрут
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             {/* Откуда */}
             <div>
@@ -244,7 +217,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 <Target className="w-4 h-4 text-blue-500" />
                 Откуда
               </label>
-              <div 
+              <div
                 className="p-2 border rounded-lg bg-white cursor-pointer hover:border-blue-500 transition-colors"
                 onClick={() => openSearch('from')}
               >
@@ -271,7 +244,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 <Target className="w-4 h-4 text-red-500" />
                 Куда
               </label>
-              <div 
+              <div
                 className="p-2 border rounded-lg bg-white cursor-pointer hover:border-red-500 transition-colors"
                 onClick={() => openSearch('to')}
               >
