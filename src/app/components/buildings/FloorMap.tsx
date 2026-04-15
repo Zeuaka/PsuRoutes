@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Point, Edge } from '../../data/navigationData';
-import { FloorMapCanvas } from './FloorMapCanvas.tsx';
+import { FloorMapCanvas } from './FloorMapCanvas';
 import './floorMapStyles.css';
 
 interface FloorMapProps {
@@ -15,12 +15,14 @@ interface FloorMapProps {
   onFloorTransition?: (targetFloor: number, fromPointId?: number) => void;
   allPoints?: Point[];
   allEdges?: Edge[];
+  floorPlanUrl?: string | null;   // новый пропс
 }
 
 export const FloorMap = ({ 
   points, 
   edges, 
-  floorNumber, 
+  floorNumber,
+  floorPlanUrl,
   selectedFromPoint, 
   selectedToPoint,
   path,
@@ -92,7 +94,16 @@ export const FloorMap = ({
   }
 
   return (
-    <div className="floor-map-container">
+    <div className="floor-map-container" style={{ position: 'relative' }}>
+      {/* Фоновое изображение плана этажа */}
+      {floorPlanUrl && (
+        <img
+          src={floorPlanUrl}
+          alt={`План ${floorNumber} этажа`}
+          className="floor-map-background"
+        />
+      )}
+
       {/* Панель выбора режима */}
       <div className="floor-map-controls">
         <button

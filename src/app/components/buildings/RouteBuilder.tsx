@@ -89,6 +89,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setShowPanorama(true);
   };
 
+  // Получаем URL плана этажа для текущего этажа
+  const currentFloor = floors.find(f => f.floor_number === selectedFloor);
+  const floorPlanUrl = currentFloor?.floor_plan_url;
+
   if (loading) {
     return (
       <div className="route-builder-spinner">
@@ -176,6 +180,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 })}
                 edges={[]}
                 floorNumber={selectedFloor}
+                floorPlanUrl={floorPlanUrl}
                 selectedFromPoint={selectedFromPoint}
                 selectedToPoint={selectedToPoint}
                 path={null}

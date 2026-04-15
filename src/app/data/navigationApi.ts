@@ -46,20 +46,12 @@ export async function fetchEdgesByBuilding(buildingId: number): Promise<Edge[]> 
 export async function fetchPanoramasByBuilding(buildingId: number): Promise<Panorama[]> {
   const res = await fetch(`${API_BASE}/buildings/${buildingId}/panoramas`);
   if (!res.ok) return [];
-  const data: Panorama[] = await res.json();
-  // Преобразуем пути у каждой панорамы
-  return data.map(p => ({
-    ...p,
-    image_path: fixPanoramaPath(p.image_path),
-  }));
+  return res.json();
 }
 
+// Новая функция: загружаем панораму по ID точки
 export async function fetchPanoramaByPointId(pointId: number): Promise<Panorama | undefined> {
   const res = await fetch(`${API_BASE}/panoramas/by-point/${pointId}`);
   if (!res.ok) return undefined;
-  const data: Panorama = await res.json();
-  if (data && data.image_path) {
-    data.image_path = fixPanoramaPath(data.image_path);
-  }
-  return data;
+  return res.json();
 }

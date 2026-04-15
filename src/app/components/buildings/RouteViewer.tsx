@@ -38,6 +38,9 @@ export const RouteViewer = ({
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
   const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
   
+  // Получаем URL плана этажа для текущего этажа
+  const floorPlanUrl = currentFloorObj?.floor_plan_url;
+  
   const pointsOnCurrentFloor = allPoints.filter(p => {
     const pointFloor = floors.find(f => f.id === p.floor_id);
     return pointFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
@@ -166,6 +169,7 @@ export const RouteViewer = ({
                 points={pointsOnCurrentFloor}
                 edges={edgesOnCurrentFloor}
                 floorNumber={currentFloorObj?.floor_number || selectedFloor}
+                floorPlanUrl={floorPlanUrl}
                 selectedFromPoint={null}
                 selectedToPoint={null}
                 path={enhancedPath}

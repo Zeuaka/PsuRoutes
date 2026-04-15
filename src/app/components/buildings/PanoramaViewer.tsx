@@ -1,7 +1,7 @@
+// src/app/components/buildings/PanoramaViewer.tsx
 import { useEffect, useRef, useState } from 'react';
 import 'pannellum/build/pannellum.css';
 import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
-import { fetchPanoramaByPointId, fetchPanoramasByBuilding } from '../../data/navigationApi';
 
 interface PanoramaViewerProps {
   buildingId: string;
@@ -12,6 +12,27 @@ interface PanoramaViewerProps {
 
 declare const pannellum: any;
 
+const panoramaMap: Record<number, { image: string; title: string; yaw?: number; pitch?: number }> = {
+  100: {
+    image: '/panoramas/corpus2_hall.jpg',
+    title: 'Холл ИКНТ',
+    yaw: 0,
+    pitch: 0,
+  },
+  110: {
+    image: '/panoramas/corpus2_cafe.jpg',
+    title: 'Столовая',
+    yaw: 0,
+    pitch: 0,
+  },
+  122: {
+    image: '/panoramas/corpus2_lab.jpg',
+    title: 'Лаборатория биологии',
+    yaw: 0,
+    pitch: 0,
+  },
+};
+
 export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: PanoramaViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
@@ -19,40 +40,19 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pannellumLoaded, setPannellumLoaded] = useState(false);
-  const [panoramaConfig, setPanoramaConfig] = useState<{ image: string; title: string; yaw?: number; pitch?: number } | null>(null);
 
-  const corpusId = parseInt(buildingId);
-
-  // Загружаем конфигурацию панорамы через API (пути уже исправлены в navigationApi)
-  useEffect(() => {
-    let cancelled = false;
-    async function loadPanorama() {
-      try {
-        let panorama = null;
-        if (pointId) {
-          panorama = await fetchPanoramaByPointId(pointId);
-        }
-        if (!panorama) {
-          const panoramas = await fetchPanoramasByBuilding(corpusId);
-          if (panoramas.length > 0) panorama = panoramas[0];
-        }
-        if (!cancelled && panorama) {
-          setPanoramaConfig({
-            image: panorama.image_path,
-            title: panorama.title,
-            yaw: panorama.yaw || 0,
-            pitch: panorama.pitch || 0,
-          });
-        } else if (!cancelled) {
-          setPanoramaConfig(null);
-        }
-      } catch (err) {
-        if (!cancelled) setError('Ошибка загрузки панорамы');
-      }
+  const getPanoramaConfig = () => {
+    if (pointId && panoramaMap[pointId]) {
+      return panoramaMap[pointId];
     }
-    loadPanorama();
-    return () => { cancelled = true; };
-  }, [corpusId, pointId]);
+    const firstKey = Object.keys(panoramaMap)[0];
+    if (firstKey) {
+      return panoramaMap[Number(firstKey)];
+    }
+    return null;
+  };
+
+  const panoramaConfig = getPanoramaConfig();
 
   // Загружаем Pannellum
   useEffect(() => {
@@ -86,31 +86,40 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         viewerRef.current = null;
       }
 
-      viewerRef.current = pannellumLib.viewer(containerRef.current, {
-        type: 'equirectangular',
-        panorama: panoramaConfig.image,
-        title: panoramaConfig.title,
-        author: 'ПГНИУ',
-        autoLoad: true,
-        showZoomCtrl: true,
-        showFullscreenCtrl: true,
-        compass: true,
-        keyboard: true,
-        draggable: true,
-        defaultYaw: panoramaConfig.yaw,
-        defaultPitch: panoramaConfig.pitch,
-        yaw: panoramaConfig.yaw,
-        pitch: panoramaConfig.pitch,
-        hfov: 100,
-        minHfov: 50,
-        maxHfov: 120,
-        onLoad: () => setIsLoading(false),
-        onError: (err: any) => {
-          console.error(err);
-          setError('Не удалось загрузить панораму. Проверьте наличие файла.');
-          setIsLoading(false);
-        },
-      });
+      // Проверяем, существует ли файл
+      const img = new Image();
+      img.onload = () => {
+        viewerRef.current = pannellumLib.viewer(containerRef.current, {
+          type: 'equirectangular',
+          panorama: panoramaConfig.image,
+          title: panoramaConfig.title,
+          author: 'ПГНИУ',
+          autoLoad: true,
+          showZoomCtrl: true,
+          showFullscreenCtrl: true,
+          compass: true,
+          keyboard: true,
+          draggable: true,
+          defaultYaw: panoramaConfig.yaw || 0,
+          defaultPitch: panoramaConfig.pitch || 0,
+          yaw: panoramaConfig.yaw || 0,
+          pitch: panoramaConfig.pitch || 0,
+          hfov: 100,
+          minHfov: 50,
+          maxHfov: 120,
+          onLoad: () => setIsLoading(false),
+          onError: (err: any) => {
+            console.error(err);
+            setError('Не удалось загрузить панораму. Проверьте наличие файла.');
+            setIsLoading(false);
+          },
+        });
+      };
+      img.onerror = () => {
+        setError(`Файл панорамы не найден: ${panoramaConfig.image}`);
+        setIsLoading(false);
+      };
+      img.src = panoramaConfig.image;
     } catch (err) {
       console.error(err);
       setError('Ошибка инициализации панорамы');
