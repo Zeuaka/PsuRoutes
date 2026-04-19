@@ -1,6 +1,6 @@
 import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
 import { FloorMap } from './FloorMap';
 import { RouteViewer } from './RouteViewer';
@@ -16,7 +16,7 @@ interface RouteBuilderProps {
 }
 
 export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderProps) => {
-  const { floors, points: allPoints, edges: allEdges, panoramas, loading } = useBuildingData(buildingId);
+  const { floors, points: allPoints, edges: allEdges, panoramas, loading, refreshData } = useBuildingData(buildingId);
 
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
@@ -33,8 +33,18 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [mapScale, setMapScale] = useState(1);
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
 
+  // Состояние для режима редактирования
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [localPoints, setLocalPoints] = useState<Point[]>([]);
+
+  // Синхронизируем localPoints с allPoints при загрузке
+  useEffect(() => {
+    setLocalPoints(allPoints);
+  }, [allPoints]);
+
   const hasPanorama = panoramas.length > 0;
-  const searchResults = allPoints.filter(point =>
+  
+  const searchResults = localPoints.filter(point =>
     point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -59,8 +69,8 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   };
 
   const handleFindPath = () => {
-    if (selectedFromPoint && selectedToPoint && allPoints.length && allEdges.length) {
-      const result = findShortestPath(allPoints, allEdges, selectedFromPoint, selectedToPoint);
+    if (selectedFromPoint && selectedToPoint && localPoints.length && allEdges.length) {
+      const result = findShortestPath(localPoints, allEdges, selectedFromPoint, selectedToPoint);
       if (result) {
         setPathResult(result);
         setShowRouteViewer(true);
@@ -84,13 +94,51 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   const getPointName = (pointId: number | null) => {
     if (!pointId) return null;
-    const point = allPoints.find(p => p.id === pointId);
+    const point = localPoints.find(p => p.id === pointId);
     return point?.name || null;
   };
 
   const handleOpenPanorama = (pointId?: number) => {
     setSelectedPointId(pointId);
     setShowPanorama(true);
+  };
+
+  // Функция для сохранения изменений координат в БД
+  const savePointCoordinates = async (pointId: number, x: number, y: number) => {
+  try {
+    console.log('Сохраняем точку:', pointId, 'координаты:', x, y);
+    
+    const response = await fetch(`http://localhost:5000/api/points/${pointId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ x_coord: x, y_coord: y })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      console.log('✅ Координаты сохранены в БД');
+      // Обновляем локальное состояние
+      setLocalPoints(prev => prev.map(p => 
+        p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
+      ));
+    } else {
+      console.error('❌ Ошибка сохранения:', data.error);
+      alert('Ошибка сохранения координат: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  } catch (error) {
+    console.error('❌ Ошибка сети:', error);
+    alert('Ошибка соединения с сервером');
+  }
+};
+
+  // Обработчик для перетаскивания точки (нужно будет добавить в FloorMap)
+  const handlePointDrag = (pointId: number, x: number, y: number) => {
+    if (isEditMode) {
+      setLocalPoints(prev => prev.map(p => 
+        p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
+      ));
+    }
   };
 
   const currentFloor = floors.find(f => f.floor_number === selectedFloor);
@@ -114,7 +162,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         buildingName={buildingName}
         path={pathResult}
         floors={floors}
-        allPoints={allPoints}
+        allPoints={localPoints}
         allEdges={allEdges}
         panoramas={panoramas}
         onBack={() => setShowRouteViewer(false)}
@@ -139,6 +187,22 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   return (
     <div className="route-builder-container">
+      {/* Кнопка переключения режима редактирования */}
+      <button
+        onClick={() => setIsEditMode(!isEditMode)}
+        className="fixed bottom-20 right-4 z-50 bg-orange-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm"
+      >
+        {isEditMode ? '🔴 Режим редактирования' : '🟢 Режим просмотра'}
+      </button>
+
+      {/* Кнопка обновления данных */}
+      <button
+        onClick={() => refreshData()}
+        className="fixed bottom-32 right-4 z-50 bg-blue-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm"
+      >
+        🔄 Обновить данные
+      </button>
+
       <div className="route-builder-header">
         <div className="route-builder-header-content">
           <button onClick={onBack} className="route-builder-back-btn">
@@ -173,7 +237,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
             <div className="route-builder-map-wrapper">
               <FloorMap
-                points={allPoints.filter(p => {
+                points={localPoints.filter(p => {
                   const pf = floors.find(f => f.id === p.floor_id);
                   return pf?.floor_number === selectedFloor;
                 })}
@@ -185,7 +249,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 path={null}
                 onPointSelect={handlePointSelect}
                 onFloorTransition={handleFloorTransition}
-                allPoints={allPoints}
+                allPoints={localPoints}
                 allEdges={allEdges}
                 scale={mapScale}
                 position={mapPosition}
@@ -193,6 +257,9 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   setMapScale(scale);
                   setMapPosition(position);
                 }}
+                isEditMode={isEditMode}
+                onPointDrag={handlePointDrag}
+                onPointSave={savePointCoordinates}
               />
             </div>
           </div>

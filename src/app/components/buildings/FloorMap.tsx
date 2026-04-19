@@ -19,6 +19,10 @@ interface FloorMapProps {
   scale?: number;
   position?: { x: number; y: number };
   onZoomChange?: (scale: number, position: { x: number; y: number }) => void;
+  // Новые пропсы для режима редактирования
+  isEditMode?: boolean;
+  onPointDrag?: (pointId: number, x: number, y: number) => void;
+  onPointSave?: (pointId: number, x: number, y: number) => void;
 }
 
 export const FloorMap = ({ 
@@ -36,12 +40,16 @@ export const FloorMap = ({
   allEdges = [],
   scale: externalScale = 0.1,
   position: externalPosition = { x: 0, y: 0 },
-  onZoomChange
+  onZoomChange,
+  isEditMode = false,
+  onPointDrag,
+  onPointSave
 }: FloorMapProps) => {
   const [selectMode, setSelectMode] = useState<'from' | 'to'>('from');
   const [hoveredPointId, setHoveredPointId] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +111,54 @@ export const FloorMap = ({
     }
   };
 
+  // Обработчик начала перетаскивания точки (только в режиме редактирования)
+  const handlePointMouseDown = (e: React.MouseEvent, pointId: number) => {
+    if (!isEditMode) return;
+    e.stopPropagation();
+    setDraggedPoint(pointId);
+  };
+
+  // Обработчик перемещения мыши для перетаскивания точки
+  const handleGlobalMouseMove = (e: MouseEvent) => {
+    if (!isEditMode || draggedPoint === null || !containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    // Ограничиваем координаты от 0 до 100
+    const clampedX = Math.min(Math.max(x, 0), 100);
+    const clampedY = Math.min(Math.max(y, 0), 100);
+    
+    if (onPointDrag) {
+      onPointDrag(draggedPoint, clampedX, clampedY);
+    }
+  };
+
+  // Обработчик отпускания мыши для сохранения координат
+const handleGlobalMouseUp = () => {
+  if (draggedPoint !== null && onPointSave) {
+    const point = points.find(p => p.id === draggedPoint);
+    if (point && point.x_coord !== null && point.y_coord !== null) {
+      console.log('Сохранение точки:', draggedPoint, point.x_coord, point.y_coord);
+      onPointSave(draggedPoint, point.x_coord, point.y_coord);
+    }
+  }
+  setDraggedPoint(null);
+};
+
+  // Добавляем/удаляем глобальные обработчики
+  React.useEffect(() => {
+    if (isEditMode) {
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isEditMode, draggedPoint, points]);
+
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
@@ -121,6 +177,9 @@ export const FloorMap = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Если перетаскиваем точку, не начинаем панорамирование
+    if (draggedPoint !== null) return;
+    
     if (e.button === 0) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
@@ -128,7 +187,7 @@ export const FloorMap = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
+    if (isDragging && draggedPoint === null) {
       updateZoom(scale, {
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
@@ -151,6 +210,7 @@ export const FloorMap = ({
   const handleZoomOut = () => {
     updateZoom(Math.max(scale / 1.2, 0.05), position);
   };
+  
 
   // Убираем заглушку - всегда показываем карту, даже если нет точек
   return (
@@ -163,7 +223,7 @@ export const FloorMap = ({
           width: '100%',
           height: '100%',
           overflow: 'hidden',
-          cursor: isDragging ? 'grabbing' : 'grab',
+          cursor: isDragging ? 'grabbing' : (isEditMode ? 'crosshair' : 'grab'),
           backgroundColor: '#f3f4f6',
           borderRadius: '0.75rem',
         }}
@@ -208,6 +268,9 @@ export const FloorMap = ({
             getConnectedFloors={getConnectedFloors}
             onPointClick={handlePointClick}
             onPointHover={setHoveredPointId}
+            isEditMode={isEditMode}
+            onPointMouseDown={handlePointMouseDown}
+            draggedPointId={draggedPoint}
           />
         </div>
       </div>
@@ -246,6 +309,11 @@ export const FloorMap = ({
         <span style={{ display: 'block', fontSize: '10px', marginTop: '4px' }}>
           🖱️ Колесико мыши - зум | Зажать ЛКМ - перемещение
         </span>
+        {isEditMode && (
+          <span style={{ display: 'block', fontSize: '10px', marginTop: '4px', color: '#f97316' }}>
+            ✏️ Режим редактирования: перетащите точку для изменения координат
+          </span>
+        )}
       </div>
 
       {points.some(p => p.type === 2 || p.type === 4 || p.type === 6) && (

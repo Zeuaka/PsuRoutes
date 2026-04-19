@@ -123,6 +123,24 @@ app.get('/api/buildings/:id', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+// Обновление координат точки
+app.put('/api/points/:id', async (req, res) => {
+  const { id } = req.params;
+  const { x_coord, y_coord } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE points SET x_coord = $1, y_coord = $2 WHERE id = $3 RETURNING *',
+      [x_coord, y_coord, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Точка не найдена' });
+    }
+    res.json({ success: true, point: result.rows[0] });
+  } catch (err) {
+    console.error('Ошибка обновления точки:', err);
+    res.status(500).json({ error: 'Ошибка обновления' });
+  }
+});
 // --- 5. Запускаем сервер ---
 app.listen(port, () => {
   console.log(`🚀 Сервер готов и работает на http://localhost:${port}`);

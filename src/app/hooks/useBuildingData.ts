@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Floor, Point, Edge, Panorama } from '../data/navigationData';
 import {
   fetchFloorsByBuilding,
@@ -15,29 +15,58 @@ export function useBuildingData(buildingId: number | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-
+  // Функция для принудительного обновления данных
+  const refreshData = useCallback(async () => {
     if (buildingId === null) {
-      setLoading(false);
       setFloors([]);
       setPoints([]);
       setEdges([]);
       setPanoramas([]);
+      setLoading(false);
       return;
     }
 
+    setLoading(true);
+    setError(null);
+    try {
+      const [floorsData, pointsData, edgesData, panoramasData] = await Promise.all([
+        fetchFloorsByBuilding(buildingId),
+        fetchPointsByBuilding(buildingId),
+        fetchEdgesByBuilding(buildingId),
+        fetchPanoramasByBuilding(buildingId),
+      ]);
+      setFloors(floorsData);
+      setPoints(pointsData);
+      setEdges(edgesData);
+      setPanoramas(panoramasData);
+    } catch (err) {
+      setError('Ошибка загрузки данных');
+    } finally {
+      setLoading(false);
+    }
+  }, [buildingId]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      if (buildingId === null) {
+        setLoading(false);
+        setFloors([]);
+        setPoints([]);
+        setEdges([]);
+        setPanoramas([]);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
-        // Используем buildingId как number, потому что выше проверили на null
         const [floorsData, pointsData, edgesData, panoramasData] = await Promise.all([
-          fetchFloorsByBuilding(buildingId!),
-          fetchPointsByBuilding(buildingId!),
-          fetchEdgesByBuilding(buildingId!),
-          fetchPanoramasByBuilding(buildingId!),
+          fetchFloorsByBuilding(buildingId),
+          fetchPointsByBuilding(buildingId),
+          fetchEdgesByBuilding(buildingId),
+          fetchPanoramasByBuilding(buildingId),
         ]);
         if (!cancelled) {
           setFloors(floorsData);
@@ -56,5 +85,5 @@ export function useBuildingData(buildingId: number | null) {
     return () => { cancelled = true; };
   }, [buildingId]);
 
-  return { floors, points, edges, panoramas, loading, error };
+  return { floors, points, edges, panoramas, loading, error, refreshData };
 }
