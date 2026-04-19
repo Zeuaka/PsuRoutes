@@ -33,12 +33,15 @@ export const RouteViewer = ({
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
+  
+  // Состояние для зума карты
+  const [mapScale, setMapScale] = useState(1);
+  const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
 
   const currentPoint = path.points[currentStep];
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
   const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
   
-  // Получаем URL плана этажа для текущего этажа
   const floorPlanUrl = currentFloorObj?.floor_plan_url;
   
   const pointsOnCurrentFloor = allPoints.filter(p => {
@@ -128,7 +131,6 @@ export const RouteViewer = ({
 
   return (
     <div className="route-viewer-container">
-      {/* Шапка */}
       <div className="route-viewer-header">
         <div className="route-viewer-header-content">
           <button onClick={onBack} className="route-viewer-back-btn">
@@ -145,7 +147,6 @@ export const RouteViewer = ({
         </div>
       </div>
 
-      {/* Карта */}
       <div className="route-viewer-map-area">
         <Card className="route-viewer-card">
           <div className="route-viewer-card-inner">
@@ -178,13 +179,18 @@ export const RouteViewer = ({
                 onFloorTransition={handleFloorTransition}
                 allPoints={allPoints}
                 allEdges={allEdges}
+                scale={mapScale}
+                position={mapPosition}
+                onZoomChange={(scale, position) => {
+                  setMapScale(scale);
+                  setMapPosition(position);
+                }}
               />
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Нижняя панель */}
       <div className="route-viewer-bottom-panel">
         <div className="route-viewer-bottom-content">
           <div className="route-viewer-step-card">

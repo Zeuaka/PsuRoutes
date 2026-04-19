@@ -13,6 +13,7 @@ interface FloorMapCanvasProps {
   getConnectedFloors: (pointId: number) => number[];
   onPointClick: (pointId: number) => void;
   onPointHover: (pointId: number | null) => void;
+  viewBox?: string;
 }
 
 export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
@@ -27,6 +28,7 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
   getConnectedFloors,
   onPointClick,
   onPointHover,
+  viewBox = '0 0 100 100',
 }) => {
   const getPointPosition = (point: Point) => ({
     x: point.x_coord || 50,
@@ -43,41 +45,56 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
 
     let fill = '#9ca3af';
     let stroke = '#6b7280';
-    let radius = 1.5;
+    let radius = 2.5;  // Увеличили с 1.5 до 2.5
+    let strokeWidth = 0.3;
 
     if (isCurrent) {
       fill = '#f97316';
       stroke = '#c2410c';
-      radius = 2.8;
+      radius = 4.5;  // Увеличили с 2.8 до 4.5
+      strokeWidth = 0.5;
     } else if (isSelectedFrom) {
       fill = '#3b82f6';
       stroke = '#1e40af';
-      radius = 2.5;
+      radius = 4;    // Увеличили с 2.5 до 4
+      strokeWidth = 0.5;
     } else if (isSelectedTo) {
       fill = '#ef4444';
       stroke = '#b91c1c';
-      radius = 2.5;
+      radius = 4;    // Увеличили с 2.5 до 4
+      strokeWidth = 0.5;
     } else if (isInPath) {
       fill = '#22c55e';
       stroke = '#15803d';
-      radius = 2;
+      radius = 3.5;  // Увеличили с 2 до 3.5
+      strokeWidth = 0.5;
     } else if (isStaircase) {
       fill = '#f59e0b';
       stroke = '#d97706';
-      radius = 2;
+      radius = 3.5;  // Увеличили с 2 до 3.5
+      strokeWidth = 0.5;
     } else if (isHovered) {
       fill = '#f59e0b';
-      radius = 2;
+      radius = 3.5;  // Увеличили с 2 до 3.5
+      strokeWidth = 0.5;
     }
 
-    return { fill, stroke, radius };
+    return { fill, stroke, radius, strokeWidth };
   };
 
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox={viewBox}
       preserveAspectRatio="none"
-      className="floor-map-svg"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 1,
+        pointerEvents: 'auto',
+      }}
     >
       {/* Рёбра */}
       {edges.map(edge => {
@@ -97,8 +114,8 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
             x2={to.x}
             y2={to.y}
             stroke={isInPath ? '#22c55e' : '#9ca3af'}
-            strokeWidth={isInPath ? 0.8 : 0.3}
-            strokeDasharray={isInPath ? 'none' : '1 0.5'}
+            strokeWidth={isInPath ? 1.2 : 0.6}  // Увеличили толщину линий
+            strokeDasharray={isInPath ? 'none' : '2 1'}
             className="floor-map-line"
           />
         );
@@ -122,17 +139,18 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
               r={style.radius}
               fill={style.fill}
               stroke={style.stroke}
-              strokeWidth="0.2"
+              strokeWidth={style.strokeWidth}
               className="floor-map-circle"
             />
             <text
-              x="2"
-              y="-1"
-              fontSize="2"
+              x={style.radius + 1}  // Сдвигаем текст правее
+              y={style.radius - 2}   // Поднимаем текст выше
+              fontSize="3"           // Увеличили шрифт с 2 до 3
               fill="#374151"
+              fontWeight="500"
               className="floor-map-text"
             >
-              {point.name.length > 15 ? point.name.slice(0, 12) + '...' : point.name}
+              {point.name.length > 12 ? point.name.slice(0, 10) + '...' : point.name}
             </text>
           </g>
         );

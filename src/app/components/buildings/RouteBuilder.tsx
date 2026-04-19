@@ -28,6 +28,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [searchTarget, setSearchTarget] = useState<'from' | 'to'>('from');
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [showRouteViewer, setShowRouteViewer] = useState(false);
+  
+  // Состояние для зума карты
+  const [mapScale, setMapScale] = useState(1);
+  const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
 
   const hasPanorama = panoramas.length > 0;
   const searchResults = allPoints.filter(point =>
@@ -89,7 +93,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setShowPanorama(true);
   };
 
-  // Получаем URL плана этажа для текущего этажа
   const currentFloor = floors.find(f => f.floor_number === selectedFloor);
   const floorPlanUrl = currentFloor?.floor_plan_url;
 
@@ -136,7 +139,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   return (
     <div className="route-builder-container">
-      {/* Шапка */}
       <div className="route-builder-header">
         <div className="route-builder-header-content">
           <button onClick={onBack} className="route-builder-back-btn">
@@ -150,11 +152,9 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         </div>
       </div>
 
-      {/* Карта */}
       <div className="route-builder-map-area">
         <Card className="route-builder-card">
           <div className="route-builder-card-inner">
-            {/* Переключатель этажей */}
             <div className="route-builder-floor-tabs">
               {floors.map(floor => (
                 <button
@@ -171,7 +171,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
               ))}
             </div>
 
-            {/* Карта */}
             <div className="route-builder-map-wrapper">
               <FloorMap
                 points={allPoints.filter(p => {
@@ -188,16 +187,20 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 onFloorTransition={handleFloorTransition}
                 allPoints={allPoints}
                 allEdges={allEdges}
+                scale={mapScale}
+                position={mapPosition}
+                onZoomChange={(scale, position) => {
+                  setMapScale(scale);
+                  setMapPosition(position);
+                }}
               />
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Нижняя панель */}
       <div className="route-builder-bottom-panel">
         <div className="route-builder-bottom-content">
-          {/* Кнопка панорамы */}
           {hasPanorama && (
             <button onClick={() => handleOpenPanorama()} className="route-builder-panorama-btn">
               <div className="route-builder-panorama-btn-content">
@@ -214,7 +217,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
           </h2>
 
           <div className="route-builder-points-grid">
-            {/* Откуда */}
             <div className="route-builder-point-block">
               <label className="route-builder-point-label">
                 <Target size={16} className="text-blue-500" />
@@ -245,7 +247,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
               )}
             </div>
 
-            {/* Куда */}
             <div className="route-builder-point-block">
               <label className="route-builder-point-label">
                 <Target size={16} className="text-red-500" />
@@ -297,7 +298,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         </div>
       </div>
 
-      {/* Модальное окно поиска */}
       {showSearchResults && (
         <div className="route-builder-modal-overlay" onClick={() => setShowSearchResults(false)}>
           <div className="route-builder-modal" onClick={(e) => e.stopPropagation()}>

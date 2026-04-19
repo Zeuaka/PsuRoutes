@@ -21,7 +21,7 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
   const [loading, setLoading] = useState(true);
 
   const corpusId = parseInt(building.id);
-  const hasData = corpusId === 2;
+  const hasData = corpusId;
 
   useEffect(() => {
     let cancelled = false;
