@@ -31,7 +31,8 @@ const locations: Location[] = [
   { id: '3', name: 'Корпус № 3', category: 'Что-то', top: '73%', left: '64%' },
   { id: '9', name: 'Корпус № 9', category: 'Юрфак', top: '65%', left: '83%' },
   { id: '11', name: 'Корпус № 11', category: 'тоже юрфак?', top: '80%', left: '79%' },
-  { id: '6', name: 'Корпус № 6', category: 'Химфак', top: '44%', left: '10%' }
+  { id: '6', name: 'Корпус № 6', category: 'Химфак', top: '44%', left: '10%' },
+  { id: '7', name: 'Корпус № 4', category: 'Колледж', top: '94%', left: '54%' }
 ];
 
 export function MapViewer() {
