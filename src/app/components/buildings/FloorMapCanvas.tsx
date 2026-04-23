@@ -53,42 +53,42 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
 
     let fill = '#9ca3af';
     let stroke = '#6b7280';
-    let radius = 2.5;
+    let radius = 1;
     let strokeWidth = 0.3;
 
     if (isCurrent) {
       fill = '#f97316';
       stroke = '#c2410c';
-      radius = 4.5;
+      radius = 1.5;
       strokeWidth = 0.5;
     } else if (isSelectedFrom) {
       fill = '#3b82f6';
       stroke = '#1e40af';
-      radius = 4;
+      radius = 1.5;
       strokeWidth = 0.5;
     } else if (isSelectedTo) {
       fill = '#ef4444';
       stroke = '#b91c1c';
-      radius = 4;
+      radius = 1.5;
       strokeWidth = 0.5;
     } else if (isInPath) {
       fill = '#22c55e';
       stroke = '#15803d';
-      radius = 3.5;
+      radius = 1.5;
       strokeWidth = 0.5;
     } else if (isStaircase) {
       fill = '#f59e0b';
       stroke = '#d97706';
-      radius = 3.5;
+      radius = 1.5;
       strokeWidth = 0.5;
     } else if (isHovered) {
       fill = '#f59e0b';
-      radius = 3.5;
+      radius = 1.5;
       strokeWidth = 0.5;
     } else if (isDragged) {
       fill = '#8b5cf6';
       stroke = '#6d28d9';
-      radius = 4.5;
+      radius = 1.5;
       strokeWidth = 0.5;
     }
 

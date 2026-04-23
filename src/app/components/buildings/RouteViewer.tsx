@@ -9,7 +9,13 @@ import './routeViewerStyles.css';
 interface RouteViewerProps {
   buildingId: number;
   buildingName: string;
-  path: { points: Point[]; edges: Edge[]; totalDistance: number; totalDuration: number };
+  path: { 
+    points: Point[]; 
+    edges: Edge[]; 
+    totalDistance: number; 
+    totalDuration: number;
+    edgesDuration?: number[];  // ← добавляем поле
+  };
   floors: Floor[];
   allPoints: Point[];
   allEdges: Edge[];
@@ -112,6 +118,7 @@ export const RouteViewer = ({
   };
 
   const formatTime = (minutes: number) => {
+    if (isNaN(minutes) || minutes === undefined) return '0 сек';
     if (minutes < 1) return `${Math.round(minutes * 60)} сек`;
     const mins = Math.floor(minutes);
     const secs = Math.round((minutes - mins) * 60);
@@ -221,6 +228,7 @@ export const RouteViewer = ({
               </div>
             )}
             
+            {/* ИСПРАВЛЕНО: используем edgesDuration для отображения времени на каждом шаге */}
             {currentStep < path.edges.length && path.edges[currentStep] && (
               <div className="route-viewer-direction">
                 <div className="route-viewer-direction-text">
@@ -228,7 +236,10 @@ export const RouteViewer = ({
                   {path.edges[currentStep].direction_text || 'Продолжайте движение'}
                 </div>
                 <span className="route-viewer-direction-stats">
-                  📏 {path.edges[currentStep].distance_meters} м • ⏱️ {formatTime(path.edges[currentStep].duration_minutes)}
+                  📏 {path.edges[currentStep].distance_meters} м
+                  {path.edgesDuration && path.edgesDuration[currentStep] !== undefined && (
+                    <> • ⏱️ {formatTime(path.edgesDuration[currentStep])}</>
+                  )}
                 </span>
               </div>
             )}

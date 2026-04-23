@@ -19,10 +19,10 @@ interface FloorMapProps {
   scale?: number;
   position?: { x: number; y: number };
   onZoomChange?: (scale: number, position: { x: number; y: number }) => void;
-  // Новые пропсы для режима редактирования
   isEditMode?: boolean;
   onPointDrag?: (pointId: number, x: number, y: number) => void;
   onPointSave?: (pointId: number, x: number, y: number) => void;
+  onPointHover?: (pointId: number | null) => void;  // ← ДОБАВИТЬ ЭТУ СТРОКУ
 }
 
 export const FloorMap = ({ 
@@ -43,6 +43,7 @@ export const FloorMap = ({
   onZoomChange,
   isEditMode = false,
   onPointDrag,
+  onPointHover,
   onPointSave
 }: FloorMapProps) => {
   const [selectMode, setSelectMode] = useState<'from' | 'to'>('from');
@@ -267,7 +268,10 @@ const handleGlobalMouseUp = () => {
             pathEdgeIds={pathEdgeIds}
             getConnectedFloors={getConnectedFloors}
             onPointClick={handlePointClick}
-            onPointHover={setHoveredPointId}
+            onPointHover={(pointId) => {
+                setHoveredPointId(pointId);
+                if (onPointHover) onPointHover(pointId);
+              }}
             isEditMode={isEditMode}
             onPointMouseDown={handlePointMouseDown}
             draggedPointId={draggedPoint}
