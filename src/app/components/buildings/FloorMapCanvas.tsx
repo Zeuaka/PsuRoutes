@@ -14,10 +14,10 @@ interface FloorMapCanvasProps {
   onPointClick: (pointId: number) => void;
   onPointHover: (pointId: number | null) => void;
   viewBox?: string;
-  // Новые пропсы для режима редактирования
   isEditMode?: boolean;
   onPointMouseDown?: (e: React.MouseEvent, pointId: number) => void;
   draggedPointId?: number | null;
+  planDimensions?: { width: number; height: number };
 }
 
 export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
@@ -36,11 +36,30 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
   isEditMode = false,
   onPointMouseDown,
   draggedPointId,
+  planDimensions = { width: 400, height: 400 },
 }) => {
-  const getPointPosition = (point: Point) => ({
-    x: point.x_coord || 50,
-    y: point.y_coord || 50,
-  });
+  const getPointPosition = (point: Point) => {
+    let x = point.x_coord ?? 50;
+    let y = point.y_coord ?? 50;
+    
+    // Если координаты > 100, считаем что это пиксели, а не проценты
+    if (x > 100 || y > 100) {
+      // Масштабируем из пикселей в проценты (0-100)
+      x = (x / planDimensions.width) * 100;
+      y = (y / planDimensions.height) * 100;
+      
+      // Логирование для отладки (только для первых нескольких точек)
+      if (point.id && point.id % 50 === 0) {
+        console.log(`Точка ${point.id}: (${point.x_coord}, ${point.y_coord}) → (${x.toFixed(1)}, ${y.toFixed(1)}) | План: ${planDimensions.width}x${planDimensions.height}`);
+      }
+    }
+    
+
+    x = Math.min(Math.max(x, 0), 100);
+    y = Math.min(Math.max(y, 0), 100);
+    
+    return { x, y };
+  };
 
   const getPointStyle = (point: Point) => {
     const isSelectedFrom = selectedFromPoint === point.id;
@@ -53,46 +72,49 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
 
     let fill = '#9ca3af';
     let stroke = '#6b7280';
-    let radius = 1;
-    let strokeWidth = 0.3;
+    let radius = 1.2;
+    let strokeWidth = 0.2;
 
     if (isCurrent) {
       fill = '#f97316';
       stroke = '#c2410c';
-      radius = 1.5;
-      strokeWidth = 0.5;
+      radius = 2.0;
+      strokeWidth = 0.3;
     } else if (isSelectedFrom) {
       fill = '#3b82f6';
       stroke = '#1e40af';
-      radius = 1.5;
-      strokeWidth = 0.5;
+      radius = 1.8;
+      strokeWidth = 0.3;
     } else if (isSelectedTo) {
       fill = '#ef4444';
       stroke = '#b91c1c';
-      radius = 1.5;
-      strokeWidth = 0.5;
+      radius = 1.8;
+      strokeWidth = 0.3;
     } else if (isInPath) {
       fill = '#22c55e';
       stroke = '#15803d';
       radius = 1.5;
-      strokeWidth = 0.5;
+      strokeWidth = 0.3;
     } else if (isStaircase) {
       fill = '#f59e0b';
       stroke = '#d97706';
       radius = 1.5;
-      strokeWidth = 0.5;
+      strokeWidth = 0.3;
     } else if (isHovered) {
       fill = '#f59e0b';
       radius = 1.5;
-      strokeWidth = 0.5;
+      strokeWidth = 0.3;
     } else if (isDragged) {
       fill = '#8b5cf6';
       stroke = '#6d28d9';
-      radius = 1.5;
-      strokeWidth = 0.5;
+      radius = 2.0;
+      strokeWidth = 0.3;
     }
 
-    return { fill, stroke, radius, strokeWidth };
+    const textX = radius + 0.8;
+    const textY = radius - 1.5;
+
+    return { fill, stroke, radius, strokeWidth, textX, textY };
   };
 
   return (
@@ -168,9 +190,9 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
               className="floor-map-circle"
             />
             <text
-              x={style.radius + 1}
-              y={style.radius - 2}
-              fontSize="3"
+              x={style.textX}
+              y={style.textY}
+              fontSize="2.5"
               fill="#374151"
               fontWeight="500"
               className="floor-map-text"

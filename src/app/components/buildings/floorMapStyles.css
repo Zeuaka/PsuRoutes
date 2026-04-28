@@ -26,7 +26,6 @@
   cursor: grabbing;
 }
 
-/* Панель управления зумом */
 .zoom-controls {
   position: absolute;
   bottom: 1rem;
@@ -35,6 +34,15 @@
   flex-direction: column;
   gap: 0.5rem;
   z-index: 30;
+}
+
+@media (min-width: 769px) {
+  .zoom-controls {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
+  }
 }
 
 .zoom-btn {
@@ -111,19 +119,6 @@
 
 .floor-map-control-btn-to-inactive:hover {
   background-color: #d1d5db;
-}
-
-/* Подсказка о текущем режиме */
-.floor-map-mode-hint {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-  border-radius: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  z-index: 20;
 }
 
 /* Подсказка о лестницах */

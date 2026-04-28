@@ -1,4 +1,4 @@
-import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera } from 'lucide-react';
+import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera, ChevronDown  } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
@@ -105,34 +105,32 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   // Функция для сохранения изменений координат в БД
   const savePointCoordinates = async (pointId: number, x: number, y: number) => {
-  try {
-    console.log('Сохраняем точку:', pointId, 'координаты:', x, y);
-    
-    const response = await fetch(`http://localhost:5000/api/points/${pointId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ x_coord: x, y_coord: y })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      console.log('✅ Координаты сохранены в БД');
-      // Обновляем локальное состояние
-      setLocalPoints(prev => prev.map(p => 
-        p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
-      ));
-    } else {
-      console.error('❌ Ошибка сохранения:', data.error);
-      alert('Ошибка сохранения координат: ' + (data.error || 'Неизвестная ошибка'));
+    try {
+      console.log('Сохраняем точку:', pointId, 'координаты:', x, y);
+      
+      const response = await fetch(`http://localhost:5000/api/points/${pointId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ x_coord: x, y_coord: y })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Координаты сохранены в БД');
+        setLocalPoints(prev => prev.map(p => 
+          p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
+        ));
+      } else {
+        console.error('❌ Ошибка сохранения:', data.error);
+        alert('Ошибка сохранения координат: ' + (data.error || 'Неизвестная ошибка'));
+      }
+    } catch (error) {
+      console.error('❌ Ошибка сети:', error);
+      alert('Ошибка соединения с сервером');
     }
-  } catch (error) {
-    console.error('❌ Ошибка сети:', error);
-    alert('Ошибка соединения с сервером');
-  }
-};
+  };
 
-  // Обработчик для перетаскивания точки (нужно будет добавить в FloorMap)
   const handlePointDrag = (pointId: number, x: number, y: number) => {
     if (isEditMode) {
       setLocalPoints(prev => prev.map(p => 
@@ -187,27 +185,25 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   return (
     <div className="route-builder-container">
-      {/* Кнопка переключения режима редактирования */}
-      <button
-        onClick={() => setIsEditMode(!isEditMode)}
-        className="fixed bottom-20 right-4 z-50 bg-orange-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm"
-      >
-        {isEditMode ? '🔴 Режим редактирования' : '🟢 Режим просмотра'}
-      </button>
-
-      {/* Кнопка обновления данных */}
-      <button
-        onClick={() => refreshData()}
-        className="fixed bottom-32 right-4 z-50 bg-blue-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm"
-      >
-        🔄 Обновить данные
-      </button>
+      <div className="route-builder-control-buttons">
+        <button
+          onClick={() => setIsEditMode(!isEditMode)}
+          className={`edit-mode-btn ${isEditMode ? 'edit-mode-active' : 'edit-mode-inactive'}`}
+        >
+          {isEditMode ? '✏️ Режим редактирования' : '👁️ Режим просмотра'}
+        </button>
+        <button
+          onClick={() => refreshData()}
+          className="refresh-btn"
+        >
+          🔄 Обновить данные
+        </button>
+      </div>
 
       <div className="route-builder-header">
         <div className="route-builder-header-content">
           <button onClick={onBack} className="route-builder-back-btn">
             <ArrowLeft size={20} />
-            <span>Назад к корпусу</span>
           </button>
           <div className="route-builder-title">
             <h1>{buildingName}</h1>
@@ -216,58 +212,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         </div>
       </div>
 
-      <div className="route-builder-map-area">
-        <Card className="route-builder-card">
-          <div className="route-builder-card-inner">
-            <div className="route-builder-floor-tabs">
-              {floors.map(floor => (
-                <button
-                  key={floor.id}
-                  onClick={() => setSelectedFloor(floor.floor_number)}
-                  className={`route-builder-floor-btn ${
-                    selectedFloor === floor.floor_number
-                      ? 'route-builder-floor-btn-active'
-                      : 'route-builder-floor-btn-inactive'
-                  }`}
-                >
-                  {floor.floor_number} этаж
-                </button>
-              ))}
-            </div>
-
-            <div className="route-builder-map-wrapper">
-              <FloorMap
-                points={localPoints.filter(p => {
-                  const pf = floors.find(f => f.id === p.floor_id);
-                  return pf?.floor_number === selectedFloor;
-                })}
-                edges={[]}
-                floorNumber={selectedFloor}
-                floorPlanUrl={floorPlanUrl}
-                selectedFromPoint={selectedFromPoint}
-                selectedToPoint={selectedToPoint}
-                path={null}
-                onPointSelect={handlePointSelect}
-                onFloorTransition={handleFloorTransition}
-                allPoints={localPoints}
-                allEdges={allEdges}
-                scale={mapScale}
-                position={mapPosition}
-                onZoomChange={(scale, position) => {
-                  setMapScale(scale);
-                  setMapPosition(position);
-                }}
-                isEditMode={isEditMode}
-                onPointDrag={handlePointDrag}
-                onPointSave={savePointCoordinates}
-              />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="route-builder-bottom-panel">
-        <div className="route-builder-bottom-content">
+      {/* Основной контент: 3 колонки на десктопе, на мобиле колонка с панелью под картой */}
+      <div className="route-builder-main-layout">
+        {/* Левая панель - выбор маршрута */}
+        <div className="route-builder-sidebar">
           {hasPanorama && (
             <button onClick={() => handleOpenPanorama()} className="route-builder-panorama-btn">
               <div className="route-builder-panorama-btn-content">
@@ -359,9 +307,62 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
           </div>
 
           <p className="route-builder-hint">
-            💡 Выберите режим (начало/конец) в правом верхнем углу схемы и нажмите на точку<br />
             🪜 Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
           </p>
+
+          {/* Переключатель этажей - выпадающий список с иконкой */}
+          <div className="route-builder-floor-select-sidebar">
+            <label className="floor-select-label">🗺️ Выберите этаж:</label>
+            <div className="floor-select-wrapper">
+              <select
+                value={selectedFloor}
+                onChange={(e) => setSelectedFloor(Number(e.target.value))}
+                className="floor-select-dropdown"
+              >
+                {floors.map(floor => (
+                  <option key={floor.id} value={floor.floor_number}>
+                    {floor.floor_number} этаж
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="floor-select-icon" />
+            </div>
+          </div>
+        </div>
+
+        {/* Центральная область - карта (2 колонки по ширине) */}
+        <div className="route-builder-map-area">
+          <Card className="route-builder-card">
+            <div className="route-builder-card-inner">
+              <div className="route-builder-map-wrapper">
+                <FloorMap
+                  points={localPoints.filter(p => {
+                    const pf = floors.find(f => f.id === p.floor_id);
+                    return pf?.floor_number === selectedFloor;
+                  })}
+                  edges={[]}
+                  floorNumber={selectedFloor}
+                  floorPlanUrl={floorPlanUrl}
+                  selectedFromPoint={selectedFromPoint}
+                  selectedToPoint={selectedToPoint}
+                  path={null}
+                  onPointSelect={handlePointSelect}
+                  onFloorTransition={handleFloorTransition}
+                  allPoints={localPoints}
+                  allEdges={allEdges}
+                  scale={mapScale}
+                  position={mapPosition}
+                  onZoomChange={(scale, position) => {
+                    setMapScale(scale);
+                    setMapPosition(position);
+                  }}
+                  isEditMode={isEditMode}
+                  onPointDrag={handlePointDrag}
+                  onPointSave={savePointCoordinates}
+                />
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
 

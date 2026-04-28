@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Point, Edge } from '../../data/navigationData';
 import { FloorMapCanvas } from './FloorMapCanvas';
 import './floorMapStyles.css';
@@ -22,7 +22,7 @@ interface FloorMapProps {
   isEditMode?: boolean;
   onPointDrag?: (pointId: number, x: number, y: number) => void;
   onPointSave?: (pointId: number, x: number, y: number) => void;
-  onPointHover?: (pointId: number | null) => void;  // ← ДОБАВИТЬ ЭТУ СТРОКУ
+  onPointHover?: (pointId: number | null) => void;  // ← добавить
 }
 
 export const FloorMap = ({ 
@@ -43,8 +43,8 @@ export const FloorMap = ({
   onZoomChange,
   isEditMode = false,
   onPointDrag,
-  onPointHover,
-  onPointSave
+  onPointSave,
+  onPointHover  // ← добавить
 }: FloorMapProps) => {
   const [selectMode, setSelectMode] = useState<'from' | 'to'>('from');
   const [hoveredPointId, setHoveredPointId] = useState<number | null>(null);
@@ -52,7 +52,22 @@ export const FloorMap = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
   
+  // Состояние для размеров плана
+  const [planDimensions, setPlanDimensions] = useState({ width: 400, height: 400 });
+  
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Загружаем размеры изображения плана
+  useEffect(() => {
+    if (floorPlanUrl) {
+      const img = new Image();
+      img.onload = () => {
+        setPlanDimensions({ width: img.width, height: img.height });
+        console.log(`План этажа ${floorNumber}: ${img.width} x ${img.height}`);
+      };
+      img.src = floorPlanUrl;
+    }
+  }, [floorPlanUrl, floorNumber]);
 
   // Используем внешние значения, если они переданы, иначе внутренние
   const [internalScale, setInternalScale] = useState(0.1);
@@ -137,16 +152,16 @@ export const FloorMap = ({
   };
 
   // Обработчик отпускания мыши для сохранения координат
-const handleGlobalMouseUp = () => {
-  if (draggedPoint !== null && onPointSave) {
-    const point = points.find(p => p.id === draggedPoint);
-    if (point && point.x_coord !== null && point.y_coord !== null) {
-      console.log('Сохранение точки:', draggedPoint, point.x_coord, point.y_coord);
-      onPointSave(draggedPoint, point.x_coord, point.y_coord);
+  const handleGlobalMouseUp = () => {
+    if (draggedPoint !== null && onPointSave) {
+      const point = points.find(p => p.id === draggedPoint);
+      if (point && point.x_coord !== null && point.y_coord !== null) {
+        console.log('Сохранение точки:', draggedPoint, point.x_coord, point.y_coord);
+        onPointSave(draggedPoint, point.x_coord, point.y_coord);
+      }
     }
-  }
-  setDraggedPoint(null);
-};
+    setDraggedPoint(null);
+  };
 
   // Добавляем/удаляем глобальные обработчики
   React.useEffect(() => {
@@ -178,9 +193,7 @@ const handleGlobalMouseUp = () => {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Если перетаскиваем точку, не начинаем панорамирование
     if (draggedPoint !== null) return;
-    
     if (e.button === 0) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
@@ -211,7 +224,6 @@ const handleGlobalMouseUp = () => {
   const handleZoomOut = () => {
     updateZoom(Math.max(scale / 1.2, 0.05), position);
   };
-  
 
   // Убираем заглушку - всегда показываем карту, даже если нет точек
   return (
@@ -269,12 +281,13 @@ const handleGlobalMouseUp = () => {
             getConnectedFloors={getConnectedFloors}
             onPointClick={handlePointClick}
             onPointHover={(pointId) => {
-                setHoveredPointId(pointId);
-                if (onPointHover) onPointHover(pointId);
-              }}
+              setHoveredPointId(pointId);
+              if (onPointHover) onPointHover(pointId);
+            }}
             isEditMode={isEditMode}
             onPointMouseDown={handlePointMouseDown}
             draggedPointId={draggedPoint}
+            planDimensions={planDimensions}  // ← передаём размеры плана
           />
         </div>
       </div>
