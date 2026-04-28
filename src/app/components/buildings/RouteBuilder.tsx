@@ -1,4 +1,4 @@
-import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera } from 'lucide-react';
+import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera, ChevronDown  } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
@@ -185,7 +185,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   return (
     <div className="route-builder-container">
-      {/* Кнопки управления - теперь сверху */}
       <div className="route-builder-control-buttons">
         <button
           onClick={() => setIsEditMode(!isEditMode)}
@@ -205,7 +204,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         <div className="route-builder-header-content">
           <button onClick={onBack} className="route-builder-back-btn">
             <ArrowLeft size={20} />
-            <span>Назад к корпусу</span>
           </button>
           <div className="route-builder-title">
             <h1>{buildingName}</h1>
@@ -309,25 +307,25 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
           </div>
 
           <p className="route-builder-hint">
-            💡 Выберите режим (начало/конец) в правом верхнем углу схемы и нажмите на точку<br />
             🪜 Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
           </p>
 
-          {/* Переключатель этажей - перенесен в боковую панель */}
-          <div className="route-builder-floor-tabs-sidebar">
-            <label className="floor-tabs-label">🗺️ Выберите этаж:</label>
-            <div className="floor-tabs-buttons">
-              {floors.map(floor => (
-                <button
-                  key={floor.id}
-                  onClick={() => setSelectedFloor(floor.floor_number)}
-                  className={`floor-tab-btn ${
-                    selectedFloor === floor.floor_number ? 'floor-tab-active' : 'floor-tab-inactive'
-                  }`}
-                >
-                  {floor.floor_number} этаж
-                </button>
-              ))}
+          {/* Переключатель этажей - выпадающий список с иконкой */}
+          <div className="route-builder-floor-select-sidebar">
+            <label className="floor-select-label">🗺️ Выберите этаж:</label>
+            <div className="floor-select-wrapper">
+              <select
+                value={selectedFloor}
+                onChange={(e) => setSelectedFloor(Number(e.target.value))}
+                className="floor-select-dropdown"
+              >
+                {floors.map(floor => (
+                  <option key={floor.id} value={floor.floor_number}>
+                    {floor.floor_number} этаж
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="floor-select-icon" />
             </div>
           </div>
         </div>

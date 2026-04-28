@@ -69,20 +69,20 @@
 
 /* Шапка */
 .route-builder-header {
-  background: linear-gradient(to right, #15803d, #166534);
+  background: rgba(167,60,76);
   color: white;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
 }
 
 .route-builder-header-content {
-  max-width: 72rem;
-  margin: 0 auto;
+  width: 100%;
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
+
 
 .route-builder-back-btn {
   display: flex;
@@ -90,7 +90,6 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
   transition: all 0.2s;
   cursor: pointer;
   border: none;
@@ -98,16 +97,16 @@
 }
 
 .route-builder-back-btn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .route-builder-title h1 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
 .route-builder-title p {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #bbf7d0;
 }
 
@@ -563,6 +562,67 @@
   border-radius: 9999px;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
+}
+
+.route-builder-floor-select-sidebar {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.floor-select-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.floor-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.floor-select-dropdown {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+}
+
+.floor-select-dropdown:hover {
+  border-color: rgba(167,60,76);
+}
+
+.floor-select-dropdown:focus {
+  outline: none;
+}
+
+.floor-select-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .floor-select-dropdown {
+    font-size: 0.8rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+  }
+  
+  .floor-select-icon {
+    right: 0.75rem;
+  }
 }
 
 @keyframes spin {

@@ -124,21 +124,6 @@ export const BuildingDetails = ({ building, onBack }: BuildingDetailsProps) => {
               </div>
             </button>
           )}
-          {/* Кнопка 360° панорамы */}
-          {hasPanorama && (
-            <button
-              onClick={() => handleOpenPanorama()}
-              className="w-full bg-[#b35261] hover:bg-[#9b4854] text-white rounded-xl p-4 shadow-lg transition-all transform hover:scale-[1.02]"
-            >
-              <div className="flex items-center justify-center gap-3">
-                <Camera className="w-6 h-6" />
-                <div>
-                  <div className="font-bold text-lg">360° виртуальный тур</div>
-                </div>
-                <ArrowRight className="w-6 h-6" />
-              </div>
-            </button>
-          )}
 
           {/* Описание корпуса */}
           <Card className="p-6 shadow-md">
