@@ -5,6 +5,21 @@ export interface PathResult {
   edges: Edge[];
   totalDistance: number;
   totalDuration: number;
+  edgesDuration?: number[];
+}
+
+function getPointSpeed(point: Point): number {
+  if (point.type === 4 || point.type === 6) {
+    return 2; // км/ч для лестниц
+  }
+  return 4; // км/ч для обычных точек
+}
+
+function calculateDuration(edge: Edge, fromPoint: Point, toPoint: Point): number {
+  const distance = Number(edge.distance_meters) || 0;
+  const speed = getPointSpeed(fromPoint);
+  const durationMinutes = (distance / 1000 / speed) * 60;
+  return durationMinutes;
 }
 
 export function findShortestPath(
@@ -13,43 +28,56 @@ export function findShortestPath(
   startPointId: number,
   endPointId: number
 ): PathResult | null {
-  // 1. Построение графа
+  const pointMap = new Map(points.map(p => [p.id, p]));
+  
+  // Построение графа
   const graph: Record<number, { to: number; distance: number; duration: number; edge: Edge }[]> = {};
   points.forEach(p => { graph[p.id] = []; });
+  
   edges.forEach(edge => {
+    const fromPoint = pointMap.get(edge.from_point_id);
+    const toPoint = pointMap.get(edge.to_point_id);
+    
+    if (!fromPoint || !toPoint) return;
+    
+    const distance = Number(edge.distance_meters) || 0;
+    const duration = calculateDuration(edge, fromPoint, toPoint);
+    
     graph[edge.from_point_id].push({
       to: edge.to_point_id,
-      distance: edge.distance_meters,
-      duration: edge.duration_minutes,
+      distance: distance,
+      duration: duration,
       edge: edge,
     });
-    if (edge.is_bidirectional) {
-      graph[edge.to_point_id].push({
-        to: edge.from_point_id,
-        distance: edge.distance_meters,
-        duration: edge.duration_minutes,
-        edge: edge,
-      });
-    }
+    
+    // Обратное направление
+    const backDuration = calculateDuration(edge, toPoint, fromPoint);
+    graph[edge.to_point_id].push({
+      to: edge.from_point_id,
+      distance: distance,
+      duration: backDuration,
+      edge: edge,
+    });
   });
 
-  // 2. Инициализация Дейкстры
+  // Дейкстра
   const dist: Record<number, number> = {};
-  const duration: Record<number, number> = {};
+  const dur: Record<number, number> = {};
   const prev: Record<number, { id: number; edge: Edge | null }> = {};
+  
   points.forEach(p => {
     dist[p.id] = Infinity;
-    duration[p.id] = Infinity;
+    dur[p.id] = Infinity;
     prev[p.id] = { id: -1, edge: null };
   });
+  
   dist[startPointId] = 0;
-  duration[startPointId] = 0;
-
+  dur[startPointId] = 0;
+  
   const queue = [startPointId];
   const visited = new Set<number>();
 
   while (queue.length) {
-    // Находим узел с минимальным расстоянием
     let current = queue[0];
     let minDist = dist[current];
     for (let i = 1; i < queue.length; i++) {
@@ -68,11 +96,13 @@ export function findShortestPath(
 
     for (const neighbor of graph[current] || []) {
       if (visited.has(neighbor.to)) continue;
+      
       const newDist = dist[current] + neighbor.distance;
-      const newDur = duration[current] + neighbor.duration;
+      const newDur = dur[current] + neighbor.duration;
+      
       if (newDist < dist[neighbor.to]) {
         dist[neighbor.to] = newDist;
-        duration[neighbor.to] = newDur;
+        dur[neighbor.to] = newDur;
         prev[neighbor.to] = { id: current, edge: neighbor.edge };
         if (!queue.includes(neighbor.to)) {
           queue.push(neighbor.to);
@@ -81,88 +111,51 @@ export function findShortestPath(
     }
   }
 
-  // 3. Если Дейкстра не нашла путь, пробуем BFS
   if (dist[endPointId] === Infinity) {
-    console.warn('Дейкстра не сработала, используем BFS');
-    return findShortestPathBFS(points, edges, startPointId, endPointId);
+    console.warn('Путь не найден');
+    return null;
   }
 
-  // 4. Восстановление пути
+  // Восстановление пути
   const pathPoints: Point[] = [];
   const pathEdges: Edge[] = [];
   let cur = endPointId;
+  
   while (cur !== startPointId) {
-    const point = points.find(p => p.id === cur);
+    const point = pointMap.get(cur);
     if (point) pathPoints.unshift(point);
     const edge = prev[cur]?.edge;
     if (edge) pathEdges.unshift(edge);
     cur = prev[cur]?.id ?? startPointId;
   }
-  const startPoint = points.find(p => p.id === startPointId);
+  const startPoint = pointMap.get(startPointId);
   if (startPoint) pathPoints.unshift(startPoint);
 
-  return {
-    points: pathPoints,
-    edges: pathEdges,
-    totalDistance: Math.round(dist[endPointId]),
-    totalDuration: Math.round(duration[endPointId] * 10) / 10,
-  };
-}
+  // Подсчёт сумм и массива времени по шагам
+  let totalDistance = 0;
+  let totalDuration = 0;
+  const edgesDuration: number[] = [];
 
-
-function findShortestPathBFS(
-  points: Point[],
-  edges: Edge[],
-  startPointId: number,
-  endPointId: number
-): PathResult | null {
-  const graph: Record<number, { to: number; edge: Edge }[]> = {};
-  points.forEach(p => { graph[p.id] = []; });
-  edges.forEach(edge => {
-    graph[edge.from_point_id].push({ to: edge.to_point_id, edge });
-    if (edge.is_bidirectional) {
-      graph[edge.to_point_id].push({ to: edge.from_point_id, edge });
-    }
-  });
-
-  const queue: number[] = [startPointId];
-  const visited = new Set<number>();
-  const prev: Record<number, { node: number; edge: Edge }> = {};
-
-  while (queue.length) {
-    const current = queue.shift()!;
-    if (current === endPointId) break;
-    if (visited.has(current)) continue;
-    visited.add(current);
-    for (const neighbor of graph[current] || []) {
-      if (!visited.has(neighbor.to) && !prev[neighbor.to]) {
-        prev[neighbor.to] = { node: current, edge: neighbor.edge };
-        queue.push(neighbor.to);
-      }
+  for (let i = 0; i < pathEdges.length; i++) {
+    const edge = pathEdges[i];
+    const fromPoint = pathPoints[i];
+    const toPoint = pathPoints[i + 1];
+    
+    if (fromPoint && toPoint) {
+      const distance = Number(edge.distance_meters) || 0;
+      const duration = calculateDuration(edge, fromPoint, toPoint);
+      
+      totalDistance += distance;
+      totalDuration += duration;
+      edgesDuration.push(duration);
     }
   }
 
-  if (!prev[endPointId] && startPointId !== endPointId) return null;
-
-  const pathPoints: Point[] = [];
-  const pathEdges: Edge[] = [];
-  let cur = endPointId;
-  while (cur !== startPointId) {
-    const point = points.find(p => p.id === cur);
-    if (point) pathPoints.unshift(point);
-    const edge = prev[cur]?.edge;
-    if (edge) pathEdges.unshift(edge);
-    cur = prev[cur]?.node ?? startPointId;
-  }
-  const startPoint = points.find(p => p.id === startPointId);
-  if (startPoint) pathPoints.unshift(startPoint);
-
-  const totalDistance = pathEdges.reduce((sum, e) => sum + e.distance_meters, 0);
-  const totalDuration = pathEdges.reduce((sum, e) => sum + e.duration_minutes, 0);
   return {
     points: pathPoints,
     edges: pathEdges,
     totalDistance: Math.round(totalDistance),
     totalDuration: Math.round(totalDuration * 10) / 10,
+    edgesDuration: edgesDuration,
   };
 }
