@@ -319,25 +319,7 @@ export const FloorMap = ({
         >
           🔴 Выбрать конец
         </button>
-      </div>
-
-      <div className="floor-map-mode-hint">
-        {selectMode === 'from' ? '🔵 Режим: выбор начальной точки' : '🔴 Режим: выбор конечной точки'}
-        <span style={{ display: 'block', fontSize: '10px', marginTop: '4px' }}>
-          🖱️ Колесико мыши - зум | Зажать ЛКМ - перемещение
-        </span>
-        {isEditMode && (
-          <span style={{ display: 'block', fontSize: '10px', marginTop: '4px', color: '#f97316' }}>
-            ✏️ Режим редактирования: перетащите точку для изменения координат
-          </span>
-        )}
-      </div>
-
-      {points.some(p => p.type === 2 || p.type === 4 || p.type === 6) && (
-        <div className="floor-map-staircase-hint">
-          🪜 Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
-        </div>
-      )}
+      </div> 
     </div>
   );
 };
