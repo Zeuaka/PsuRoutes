@@ -49,9 +49,15 @@ export async function fetchPanoramasByBuilding(buildingId: number): Promise<Pano
   return res.json();
 }
 
-// Новая функция: загружаем панораму по ID точки
 export async function fetchPanoramaByPointId(pointId: number): Promise<Panorama | undefined> {
   const res = await fetch(`${API_BASE}/panoramas/by-point/${pointId}`);
   if (!res.ok) return undefined;
   return res.json();
+}
+
+export async function fetchAllPoints(): Promise<Point[]> {
+  const res = await fetch(`${API_BASE}/all-points`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data;
 }

@@ -5,6 +5,7 @@ import { PanoramaViewer } from './PanoramaViewer';
 import { FloorMap } from './FloorMap';
 import { RouteViewer } from './RouteViewer';
 import { useBuildingData } from '../../hooks/useBuildingData';
+import { fetchAllPoints } from '../../data/navigationApi';  // ← добавить импорт
 import { findShortestPath, PathResult } from '../../data/navigationUtils';
 import { Point } from '../../data/navigationData';
 import './routeBuilderStyles.css';
@@ -36,6 +37,26 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   // Состояние для режима редактирования
   const [isEditMode, setIsEditMode] = useState(false);
   const [localPoints, setLocalPoints] = useState<Point[]>([]);
+  
+  // Все точки из всех зданий (для поиска "Куда")
+  const [allBuildingsPoints, setAllBuildingsPoints] = useState<Point[]>([]);
+  const [loadingAllPoints, setLoadingAllPoints] = useState(false);
+
+  // Загружаем все точки для "Куда"
+  useEffect(() => {
+    const loadAllPoints = async () => {
+      setLoadingAllPoints(true);
+      try {
+        const points = await fetchAllPoints();
+        setAllBuildingsPoints(points);
+      } catch (error) {
+        console.error('Ошибка загрузки всех точек:', error);
+      } finally {
+        setLoadingAllPoints(false);
+      }
+    };
+    loadAllPoints();
+  }, []);
 
   // Синхронизируем localPoints с allPoints при загрузке
   useEffect(() => {
@@ -44,10 +65,24 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   const hasPanorama = panoramas.length > 0;
   
-  const searchResults = localPoints.filter(point =>
-    point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Результаты поиска в зависимости от цели
+  const searchResults = searchTarget === 'from' 
+    ? localPoints.filter(point =>
+        point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : allBuildingsPoints.filter(point =>
+        point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+
+  // Функция для получения названия здания для точки (для "Куда")
+  const getPointBuildingInfo = (point: Point) => {
+    if (searchTarget === 'to' && (point as any).building_name) {
+      return `${(point as any).building_name}`;
+    }
+    return `Корпус ${point.building_id}`;
+  };
 
   const handleFloorTransition = (targetFloor: number) => {
     setSelectedFloor(targetFloor);
@@ -58,6 +93,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
       setSelectedFromPoint(point.id);
     } else {
       setSelectedToPoint(point.id);
+      // Если выбранная точка из другого здания, показываем уведомление
+      if (point.building_id !== buildingId) {
+        console.log(`Выбрана точка из корпуса ${point.building_id}`);
+      }
     }
     setSearchQuery('');
     setShowSearchResults(false);
@@ -75,7 +114,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         setPathResult(result);
         setShowRouteViewer(true);
       } else {
-        alert('Путь не найден');
+        alert('Путь не найден. Возможно, конечная точка находится в другом корпусе.');
       }
     }
   };
@@ -142,7 +181,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const currentFloor = floors.find(f => f.floor_number === selectedFloor);
   const floorPlanUrl = currentFloor?.floor_plan_url;
 
-  if (loading) {
+  if (loading || loadingAllPoints) {
     return (
       <div className="route-builder-spinner">
         <div className="route-builder-spinner-inner">
@@ -214,16 +253,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
       <div className="route-builder-main-layout">
         <div className="route-builder-sidebar">
-          {/* {hasPanorama && (
-            <button onClick={() => handleOpenPanorama()} className="route-builder-panorama-btn">
-              <div className="route-builder-panorama-btn-content">
-                <Camera size={20} />
-                <span className="route-builder-panorama-btn-text">360° виртуальный тур</span>
-                <span className="text-xl">→</span>
-              </div>
-            </button>
-          )} */}
-
           <h2 className="route-builder-route-title">
             <Navigation size={20} className="text-[rgba(167,60,76)]" />
             Построить маршрут
@@ -252,12 +281,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   <span className="route-builder-point-placeholder">Нажмите для выбора точки</span>
                 )}
               </div>
-              {/* {selectedFromPoint && (
-                <div className="route-builder-point-status">
-                  <span className="route-builder-point-status-dot-from"></span>
-                  Начальная точка выбрана
-                </div>
-              )} */}
             </div>
 
             <div className="route-builder-point-block">
@@ -282,12 +305,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   <span className="route-builder-point-placeholder">Нажмите для выбора точки</span>
                 )}
               </div>
-              {/* {selectedToPoint && (
-                <div className="route-builder-point-status">
-                  <span className="route-builder-point-status-dot-to"></span>
-                  Конечная точка выбрана
-                </div>
-              )} */}
             </div>
           </div>
 
@@ -327,7 +344,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
           </div>
         </div>
 
-        {/* Центральная область - карта (2 колонки по ширине) */}
         <div className="route-builder-map-area">
           <Card className="route-builder-card">
             <div className="route-builder-card-inner">
@@ -391,7 +407,12 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 >
                   <div className="route-builder-result-name">{point.name}</div>
                   <div className="route-builder-result-desc">
-                    Этаж {floors.find(f => f.id === point.floor_id)?.floor_number}
+                    {searchTarget === 'to' && point.building_id !== buildingId && (
+                      <span className="text-blue-500 font-medium">
+                        🏛️ {getPointBuildingInfo(point)} • 
+                      </span>
+                    )}
+                    Этаж {floors.find(f => f.id === point.floor_id)?.floor_number || '?'}
                     {point.description && ` • ${point.description}`}
                   </div>
                 </div>

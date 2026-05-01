@@ -123,6 +123,21 @@ app.get('/api/buildings/:id', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+app.get('/api/all-points', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT p.*, b.name as building_name, b.id as building_id 
+      FROM points p
+      JOIN buildings b ON p.building_id = b.id
+      WHERE p.is_active = true
+      ORDER BY b.name, p.name
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 // Обновление координат точки
 app.put('/api/points/:id', async (req, res) => {
   const { id } = req.params;
