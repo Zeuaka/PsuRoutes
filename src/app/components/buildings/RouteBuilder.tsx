@@ -1,4 +1,4 @@
-import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera, ChevronDown  } from 'lucide-react';
+import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera, ChevronDown, Footprints, ArrowDownUp} from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
@@ -212,11 +212,9 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         </div>
       </div>
 
-      {/* Основной контент: 3 колонки на десктопе, на мобиле колонка с панелью под картой */}
       <div className="route-builder-main-layout">
-        {/* Левая панель - выбор маршрута */}
         <div className="route-builder-sidebar">
-          {hasPanorama && (
+          {/* {hasPanorama && (
             <button onClick={() => handleOpenPanorama()} className="route-builder-panorama-btn">
               <div className="route-builder-panorama-btn-content">
                 <Camera size={20} />
@@ -224,17 +222,17 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 <span className="text-xl">→</span>
               </div>
             </button>
-          )}
+          )} */}
 
           <h2 className="route-builder-route-title">
-            <Navigation size={20} className="text-green-600" />
+            <Navigation size={20} className="text-[rgba(167,60,76)]" />
             Построить маршрут
           </h2>
 
           <div className="route-builder-points-grid">
             <div className="route-builder-point-block">
               <label className="route-builder-point-label">
-                <Target size={16} className="text-blue-500" />
+                <Target size={16} className="text-[#696969]" />
                 Откуда
               </label>
               <div
@@ -254,17 +252,17 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   <span className="route-builder-point-placeholder">Нажмите для выбора точки</span>
                 )}
               </div>
-              {selectedFromPoint && (
+              {/* {selectedFromPoint && (
                 <div className="route-builder-point-status">
                   <span className="route-builder-point-status-dot-from"></span>
                   Начальная точка выбрана
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="route-builder-point-block">
               <label className="route-builder-point-label">
-                <Target size={16} className="text-red-500" />
+                <Target size={16} className="text-[rgba(167,60,76)]" />
                 Куда
               </label>
               <div
@@ -284,12 +282,12 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   <span className="route-builder-point-placeholder">Нажмите для выбора точки</span>
                 )}
               </div>
-              {selectedToPoint && (
+              {/* {selectedToPoint && (
                 <div className="route-builder-point-status">
                   <span className="route-builder-point-status-dot-to"></span>
                   Конечная точка выбрана
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 
@@ -307,12 +305,11 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
           </div>
 
           <p className="route-builder-hint">
-            🪜 Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
+            <ArrowDownUp/> Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
           </p>
 
-          {/* Переключатель этажей - выпадающий список с иконкой */}
           <div className="route-builder-floor-select-sidebar">
-            <label className="floor-select-label">🗺️ Выберите этаж:</label>
+            <label className="floor-select-label">Выберите этаж:</label>
             <div className="floor-select-wrapper">
               <select
                 value={selectedFloor}

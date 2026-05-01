@@ -5,22 +5,22 @@
   width: 100%;
   height: 100vh;
   background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Шапка */
+/* Шапка (как в RouteBuilder) */
 .route-viewer-header {
-  background: linear-gradient(to right, #15803d, #166534);
+  background: rgba(167,60,76);
   color: white;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
 }
 
 .route-viewer-header-content {
-  max-width: 72rem;
-  margin: 0 auto;
+  width: 100%;
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
@@ -33,41 +33,336 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
   transition: all 0.2s;
   cursor: pointer;
+  border: none;
+  color: white;
+  background: transparent;
 }
 
 .route-viewer-back-btn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .route-viewer-title h1 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
 .route-viewer-title p {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #bbf7d0;
 }
 
-.route-viewer-step-counter {
-  margin-left: auto;
+/* Основной layout с сайдбаром */
+.route-viewer-main-layout {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  min-height: 0;
+  overflow-y: visible;
+  overflow-x: hidden;
+}
+
+/* Сайдбар (как в RouteBuilder) */
+.route-viewer-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  background-color: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-y: auto;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.route-viewer-route-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Карточка текущей точки */
+.route-viewer-current-point-card {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border-left: 4px solid rgb(167,60,76);
+}
+
+.route-viewer-current-point-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.route-viewer-current-point-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.route-viewer-step-badge {
+  font-size: 0.7rem;
+  background-color: rgb(167,60,76);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.route-viewer-current-point-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.route-viewer-current-point-floor {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.route-viewer-current-point-desc {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgb(219, 219, 219);
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+/* Навигация по шагам */
+.route-viewer-step-navigation {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.route-viewer-step-nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.route-viewer-step-nav-btn:hover:not(:disabled) {
+  background-color: #e5e7eb;
+}
+
+.route-viewer-step-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Кнопка панорамы */
+.route-viewer-panorama-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: #767676;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.route-viewer-panorama-btn:hover {
+  background: #656565;
+}
+
+/* Карточка направления */
+.route-viewer-direction-card {
+  padding: 0.75rem;
+  background-color: rgb(247, 233, 235);
+  border-radius: 0.5rem;
+}
+
+.route-viewer-direction-text {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 0.375rem 0.75rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.route-viewer-direction-text .direction-icon {
+  flex-shrink: 0;
+}
+
+.route-viewer-direction-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #2d3848;
+}
+
+.stat-icon {
+  flex-shrink: 0;
+}
+
+/* Статистика маршрута */
+.route-viewer-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.route-viewer-stat-card {
+  padding: 0.5rem;
+  background-color: #f9fafb;
   border-radius: 0.5rem;
+  text-align: center;
+}
+
+.route-viewer-stat-label {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.route-viewer-stat-value {
+  font-weight: 600;
+  color: rgb(167,60,76);
+  font-size: 1rem;
+}
+
+.route-viewer-search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.route-viewer-search-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.route-viewer-search-selector {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.route-viewer-search-selector:hover {
+  border-color: #a2a4a9;
+}
+
+.route-viewer-search-placeholder {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Подсказка */
+.route-viewer-hint {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+  text-align: center;
+  line-height: 1.4;
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.route-viewer-hint svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Выбор этажа в сайдбаре */
+.route-viewer-floor-select-sidebar {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.floor-select-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.floor-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.floor-select-dropdown {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #363636;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+}
+
+.floor-select-dropdown:hover {
+  border-color: #a2a4a9;
+}
+
+.floor-select-dropdown:focus {
+  outline: none;
+}
+
+.floor-select-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
 }
 
 /* Карта */
 .route-viewer-map-area {
-  flex: 1;
-  min-height: 0;
-  padding: 1rem;
+  flex: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .route-viewer-card {
@@ -83,214 +378,201 @@
   flex-direction: column;
 }
 
-/* Переключатель этажей */
-.route-viewer-floor-tabs {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-  flex-wrap: wrap;
-  background-color: #f9fafb;
-  flex-shrink: 0;
-}
-
-.route-viewer-floor-btn {
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.route-viewer-floor-btn-active {
-  background-color: #16a34a;
-  color: white;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.route-viewer-floor-btn-inactive {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.route-viewer-floor-btn-inactive:hover {
-  background-color: #d1d5db;
-}
-
-/* Карта внутри */
 .route-viewer-map-wrapper {
   flex: 1;
   position: relative;
-  min-height: 0;
+  height: 100%;
 }
 
-/* Нижняя панель */
-.route-viewer-bottom-panel {
-  flex-shrink: 0;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.route-viewer-bottom-content {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-/* Информационная карточка текущего шага */
-.route-viewer-step-card {
-  padding: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(to right, #f0fdf4, #ecfdf5);
-  border-radius: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.route-viewer-step-nav {
+/* Модальное окно поиска */
+.route-viewer-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
+  justify-content: center;
+  z-index: 50;
 }
 
-.route-viewer-nav-btn {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+.route-viewer-modal {
   background-color: white;
-  transition: all 0.2s;
-  cursor: pointer;
-  border: none;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 28rem;
+  max-height: 80vh;
+  overflow: hidden;
 }
 
-.route-viewer-nav-btn:hover:not(:disabled) {
-  background-color: #f3f4f6;
+.route-viewer-modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.route-viewer-nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.route-viewer-current-point {
-  text-align: center;
-  flex: 1;
-}
-
-.route-viewer-current-point-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.route-viewer-current-point-name {
+.route-viewer-modal-title {
+  font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
-  font-size: 1rem;
-  margin-top: 0.25rem;
 }
 
-.route-viewer-current-point-floor {
-  font-size: 0.75rem;
+.route-viewer-search-container {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.route-viewer-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
   color: #9ca3af;
 }
 
-/* Кнопка панорамы */
-.route-viewer-panorama-btn {
+.route-viewer-search-input {
   width: 100%;
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  background-color: #2563eb;
-  color: white;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
 }
 
-.route-viewer-panorama-btn:hover {
-  background-color: #1d4ed8;
+.route-viewer-search-input:focus {
+  outline: none;
+  border-color: rgb(167,60,76);
 }
 
-/* Описание точки */
-.route-viewer-point-description {
-  margin-top: 0.5rem;
+.route-viewer-modal-results {
+  overflow: auto;
+  max-height: 60vh;
   padding: 0.5rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  color: #4b5563;
 }
 
-/* Направление движения */
-.route-viewer-direction {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  background-color: #eff6ff;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  color: #1e40af;
-}
-
-.route-viewer-direction-text {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.route-viewer-direction-stats {
-  display: block;
-  font-size: 0.75rem;
-  color: #3b82f6;
-  margin-top: 0.125rem;
-}
-
-/* Статистика маршрута */
-.route-viewer-stats {
-  margin-top: 0.75rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  text-align: center;
-  font-size: 0.875rem;
-}
-
-.route-viewer-stat-card {
-  padding: 0.5rem;
-  background-color: white;
-  border-radius: 0.5rem;
-}
-
-.route-viewer-stat-label {
-  color: #6b7280;
-  font-size: 0.75rem;
-}
-
-.route-viewer-stat-value {
-  font-weight: 600;
-  color: #16a34a;
-}
-
-/* Кнопка нового маршрута */
-.route-viewer-new-route-btn {
-  width: 100%;
+.route-viewer-search-result {
   padding: 0.75rem;
-  background-color: #16a34a;
-  color: white;
-  border-radius: 0.75rem;
-  transition: all 0.2s;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.route-viewer-search-result:hover {
+  background-color: #f3f4f6;
+}
+
+.route-viewer-result-name {
   font-weight: 500;
+  color: #1f2937;
+}
+
+.route-viewer-result-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.route-viewer-no-results {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.route-viewer-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.route-viewer-new-route-btn-desktop {
+  flex: 1;
+  padding: 0.5rem;
+  background-color: rgb(187, 83, 99);
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  cursor: pointer;
-  border: none;
 }
 
-.route-viewer-new-route-btn:hover {
-  background-color: #15803d;
+.route-viewer-new-route-btn-desktop:hover {
+  background-color: rgba(167,60,76);
+}
+
+/* ========== АДАПТИВ ДЛЯ МОБИЛЬНЫХ ========== */
+@media (max-width: 768px) {
+  .route-viewer-container {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .route-viewer-main-layout {
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: visible;
+    overflow-x: hidden;
+    padding-bottom: 5rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .route-viewer-sidebar {
+    width: 100%;
+    order: 2;
+    max-height: none;
+    flex-shrink: 0;
+  }
+
+  .route-viewer-map-area {
+    flex: 1;
+    order: 1;
+    min-height: 350px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  /* Шапка на мобильных */
+  .route-viewer-header-content {
+    padding: 0.75rem 1rem;
+  }
+
+  .route-viewer-title h1 {
+    font-size: 1rem;
+  }
+
+  .route-viewer-title p {
+    font-size: 0.65rem;
+  }
+
+  .route-viewer-back-btn span {
+    display: none;
+  }
+
+  .route-viewer-route-title {
+    font-size: 1rem;
+  }
+
+  .route-viewer-hint {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .route-viewer-sidebar {
+    padding: 0.75rem;
+  }
+
+  .route-viewer-map-area {
+    min-height: 300px;
+  }
+
+  .route-viewer-current-point-name {
+    font-size: 0.9rem;
+  }
 }

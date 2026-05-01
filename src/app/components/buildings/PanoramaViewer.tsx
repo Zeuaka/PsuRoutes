@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import 'pannellum/build/pannellum.css';
 import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
+import './panoramaViewerStyles.css';
 
 interface PanoramaViewerProps {
   buildingId: string;
@@ -156,24 +157,28 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
 
   if (!panoramaConfig) {
     return (
-      <div className="w-full h-screen bg-black flex flex-col">
-        <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg">
-          <div className="px-4 py-3 flex items-center">
-            <button onClick={onBack} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm">
-              <ArrowLeft className="w-4 h-4" />
-              <span>Назад</span>
+      <div className="panorama-viewer-container">
+        <div className="panorama-viewer-header">
+          <div className="panorama-viewer-header-content">
+            <button onClick={onBack} className="panorama-viewer-back-btn">
+              <ArrowLeft size={20} />
             </button>
-            <div className="flex-1 text-center">
-              <h2 className="font-semibold text-lg">{buildingName}</h2>
+            <div className="panorama-viewer-title">
+              <h1>{buildingName}</h1>
+              <p>360° виртуальный тур</p>
             </div>
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-center text-white">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🔄</div>
-            <h3 className="text-xl font-semibold mb-2">360° панорама в разработке</h3>
-            <p className="text-gray-400">Для корпуса {buildingName} панорама скоро появится</p>
-            <button onClick={onBack} className="mt-6 px-6 py-2 bg-green-600 rounded-lg hover:bg-green-700">Вернуться</button>
+        <div className="panorama-viewer-content">
+          <div className="panorama-viewer-placeholder">
+            <div className="panorama-viewer-placeholder-icon">🔄</div>
+            <h3 className="panorama-viewer-placeholder-title">360° панорама в разработке</h3>
+            <p className="panorama-viewer-placeholder-text">
+              Для корпуса {buildingName} панорама скоро появится
+            </p>
+            <button onClick={onBack} className="panorama-viewer-placeholder-btn">
+              Вернуться
+            </button>
           </div>
         </div>
       </div>
@@ -181,42 +186,38 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
   }
 
   return (
-    <div className="w-full h-screen bg-black flex flex-col">
-      <div className="bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg z-10">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm">
-            <ArrowLeft className="w-4 h-4" />
-            <span>Назад</span>
+    <div className="panorama-viewer-container">
+      <div className="panorama-viewer-header">
+        <div className="panorama-viewer-header-content">
+          <button onClick={onBack} className="panorama-viewer-back-btn">
+            <ArrowLeft size={20} />
           </button>
-          <div className="text-center">
-            <h2 className="font-semibold text-lg">{buildingName}</h2>
-            <p className="text-xs text-green-100">{panoramaConfig.title}</p>
+          <div className="panorama-viewer-title">
+            <h1>{buildingName}</h1>
+            <p>{panoramaConfig.title}</p>
           </div>
-          <button onClick={toggleFullscreen} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-all text-sm">
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            <span className="hidden sm:inline">{isFullscreen ? 'Выход' : 'Во весь экран'}</span>
+          <button onClick={toggleFullscreen} className="panorama-viewer-fullscreen-btn">
+            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
           </button>
         </div>
       </div>
-      <div className="flex-1 relative">
+      <div className="panorama-viewer-content">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-            <div className="text-center text-white">
-              <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p>Загрузка 360° панорамы...</p>
-            </div>
+          <div className="panorama-viewer-loader">
+            <div className="panorama-viewer-spinner"></div>
+            <p>Загрузка панорамы...</p>
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-            <div className="text-center text-white">
-              <div className="text-4xl mb-4">⚠️</div>
-              <p className="text-red-400">{error}</p>
-              <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700">Вернуться</button>
-            </div>
+          <div className="panorama-viewer-error">
+            <div className="panorama-viewer-error-icon">⚠️</div>
+            <p className="panorama-viewer-error-text">{error}</p>
+            <button onClick={onBack} className="panorama-viewer-error-btn">
+              Вернуться
+            </button>
           </div>
         )}
-        <div ref={containerRef} className="w-full h-full" style={{ background: '#000' }} />
+        <div ref={containerRef} className="panorama-viewer-canvas" />
       </div>
     </div>
   );

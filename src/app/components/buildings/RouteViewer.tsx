@@ -1,6 +1,6 @@
-import { ArrowLeft, Navigation, ChevronLeft, ChevronRight, Home, Camera } from 'lucide-react';
+import { Route, AlarmClock, Ruler, ArrowLeft, Navigation, ChevronLeft, ChevronRight, Home, Camera, Target, CheckCircle, Search, ArrowDownUp, ChevronDown, FlagTriangleRight, Footprints } from 'lucide-react';
 import { Card } from '../ui/card';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FloorMap } from './FloorMap';
 import { PanoramaViewer } from './PanoramaViewer';
 import { Point, Edge, Floor, Panorama } from '../../data/navigationData';
@@ -14,7 +14,7 @@ interface RouteViewerProps {
     edges: Edge[]; 
     totalDistance: number; 
     totalDuration: number;
-    edgesDuration?: number[];  // ← добавляем поле
+    edgesDuration?: number[];
   };
   floors: Floor[];
   allPoints: Point[];
@@ -39,6 +39,9 @@ export const RouteViewer = ({
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTarget, setSearchTarget] = useState<'from' | 'to'>('from');
   
   // Состояние для зума карты
   const [mapScale, setMapScale] = useState(1);
@@ -125,6 +128,32 @@ export const RouteViewer = ({
     return secs > 0 ? `${mins} мин ${secs} сек` : `${mins} мин`;
   };
 
+  // Поиск точки для навигации
+  const searchResults = allPoints.filter(point =>
+    point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const handleSearchSelect = (point: Point) => {
+    // Находим индекс точки в маршруте
+    const stepIndex = path.points.findIndex(p => p.id === point.id);
+    if (stepIndex !== -1) {
+      setCurrentStep(stepIndex);
+      const pointFloor = floors.find(f => f.id === point.floor_id);
+      if (pointFloor) setSelectedFloor(pointFloor.floor_number);
+    } else {
+      alert('Эта точка не входит в построенный маршрут');
+    }
+    setSearchQuery('');
+    setShowSearchResults(false);
+  };
+
+  const openSearch = (target: 'from' | 'to') => {
+    setSearchTarget(target);
+    setSearchQuery('');
+    setShowSearchResults(true);
+  };
+
   if (showPanorama) {
     return (
       <PanoramaViewer
@@ -142,124 +171,161 @@ export const RouteViewer = ({
         <div className="route-viewer-header-content">
           <button onClick={onBack} className="route-viewer-back-btn">
             <ArrowLeft size={20} />
-            <span>Назад к корпусу</span>
           </button>
           <div className="route-viewer-title">
             <h1>{buildingName}</h1>
             <p>Навигация по маршруту</p>
           </div>
-          <div className="route-viewer-step-counter">
-            <span>Шаг {currentStep + 1} из {path.points.length}</span>
-          </div>
         </div>
       </div>
 
-      <div className="route-viewer-map-area">
-        <Card className="route-viewer-card">
-          <div className="route-viewer-card-inner">
-            <div className="route-viewer-floor-tabs">
-              {floors.map(floor => (
-                <button
-                  key={floor.id}
-                  onClick={() => setSelectedFloor(floor.floor_number)}
-                  className={`route-viewer-floor-btn ${
-                    selectedFloor === floor.floor_number
-                      ? 'route-viewer-floor-btn-active'
-                      : 'route-viewer-floor-btn-inactive'
-                  }`}
-                >
-                  {floor.floor_number} этаж
-                </button>
-              ))}
-            </div>
-            <div className="route-viewer-map-wrapper">
-              <FloorMap
-                points={pointsOnCurrentFloor}
-                edges={edgesOnCurrentFloor}
-                floorNumber={currentFloorObj?.floor_number || selectedFloor}
-                floorPlanUrl={floorPlanUrl}
-                selectedFromPoint={null}
-                selectedToPoint={null}
-                path={enhancedPath}
-                currentPointId={currentPoint?.id}
-                onPointSelect={() => {}}
-                onFloorTransition={handleFloorTransition}
-                allPoints={allPoints}
-                allEdges={allEdges}
-                scale={mapScale}
-                position={mapPosition}
-                onZoomChange={(scale, position) => {
-                  setMapScale(scale);
-                  setMapPosition(position);
-                }}
-              />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="route-viewer-bottom-panel">
-        <div className="route-viewer-bottom-content">
-          <div className="route-viewer-step-card">
-            <div className="route-viewer-step-nav">
-              <button onClick={goToPrevStep} disabled={currentStep === 0} className="route-viewer-nav-btn">
-                <ChevronLeft size={16} />
-              </button>
-              <div className="route-viewer-current-point">
-                <div className="route-viewer-current-point-label">Текущая точка</div>
-                <div className="route-viewer-current-point-name">{currentPoint?.name}</div>
-                <div className="route-viewer-current-point-floor">Этаж {currentFloorObj?.floor_number}</div>
+      <div className="route-viewer-main-layout">
+        <div className="route-viewer-sidebar">
+          <h2 className="route-viewer-route-title">
+            <Navigation size={20} className="text-[rgba(167,60,76)]" />
+            Информация о маршруте
+          </h2>
+          
+          {currentStep < path.edges.length && path.edges[currentStep] && (
+            <div className="route-viewer-direction-card">
+              <div className="route-viewer-direction-text">
+                <Footprints size={14} className="direction-icon" />
+                <span>{path.edges[currentStep].direction_text || 'Продолжайте движение'}</span>
               </div>
-              <button onClick={goToNextStep} disabled={currentStep === path.points.length - 1} className="route-viewer-nav-btn">
-                <ChevronRight size={16} />
-              </button>
-            </div>
-            
-            {hasCurrentPanorama && (
-              <button onClick={() => handleOpenPanorama(currentPoint!.id)} className="route-viewer-panorama-btn">
-                <Camera size={16} />
-                <span>360° панорама этой точки</span>
-              </button>
-            )}
-            
-            {currentPoint?.description && (
-              <div className="route-viewer-point-description">
-                📍 {currentPoint.description}
-              </div>
-            )}
-            
-            {/* ИСПРАВЛЕНО: используем edgesDuration для отображения времени на каждом шаге */}
-            {currentStep < path.edges.length && path.edges[currentStep] && (
-              <div className="route-viewer-direction">
-                <div className="route-viewer-direction-text">
-                  <Navigation size={12} className="inline mr-1" />
-                  {path.edges[currentStep].direction_text || 'Продолжайте движение'}
-                </div>
-                <span className="route-viewer-direction-stats">
-                  📏 {path.edges[currentStep].distance_meters} м
-                  {path.edgesDuration && path.edgesDuration[currentStep] !== undefined && (
-                    <> • ⏱️ {formatTime(path.edgesDuration[currentStep])}</>
-                  )}
+              <div className="route-viewer-direction-stats">
+                <span className="stat-item">
+                  <Ruler size={12} className="stat-icon" />
+                  <span>{path.edges[currentStep].distance_meters} м</span>
                 </span>
+                {path.edgesDuration && path.edgesDuration[currentStep] !== undefined && (
+                  <span className="stat-item">
+                    <AlarmClock size={12} className="stat-icon" />
+                    <span>{formatTime(path.edgesDuration[currentStep])}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Информация о текущей точке */}
+          <div className="route-viewer-current-point-card">
+            <div className="route-viewer-current-point-header">
+              <span className="route-viewer-current-point-label">Текущая точка</span>
+              <span className="route-viewer-step-badge">Шаг {currentStep + 1} из {path.points.length}</span>
+            </div>
+            <div className="route-viewer-current-point-name">{currentPoint?.name}</div>
+            <div className="route-viewer-current-point-floor">Этаж {currentFloorObj?.floor_number}</div>
+            {currentPoint?.description && (
+              <div className="route-viewer-current-point-desc">
+                {currentPoint.description}
               </div>
             )}
-            
-            <div className="route-viewer-stats">
-              <div className="route-viewer-stat-card">
-                <div className="route-viewer-stat-label">Всего расстояние</div>
-                <div className="route-viewer-stat-value">{path.totalDistance} м</div>
-              </div>
-              <div className="route-viewer-stat-card">
-                <div className="route-viewer-stat-label">Общее время</div>
-                <div className="route-viewer-stat-value">{formatTime(path.totalDuration)}</div>
-              </div>
+          </div>
+
+          {/* Кнопки навигации по шагам */}
+          <div className="route-viewer-step-navigation">
+            <button 
+              onClick={goToPrevStep} 
+              disabled={currentStep === 0} 
+              className="route-viewer-step-nav-btn"
+            >
+              <ChevronLeft size={16} />
+              Назад
+            </button>
+            <button 
+              onClick={goToNextStep} 
+              disabled={currentStep === path.points.length - 1} 
+              className="route-viewer-step-nav-btn"
+            >
+              Вперед
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* Кнопка панорамы */}
+          {hasCurrentPanorama && (
+            <button 
+              onClick={() => handleOpenPanorama(currentPoint!.id)} 
+              className="route-viewer-panorama-btn"
+            >
+              <Camera size={16} />
+              <span>360° панорама этой точки</span>
+            </button>
+          )}
+
+
+
+          {/* Статистика маршрута */}
+          <div className="route-viewer-stats">
+            <div className="route-viewer-stat-card">
+              <div className="route-viewer-stat-label">Всего расстояние</div>
+              <div className="route-viewer-stat-value">{path.totalDistance} м</div>
+            </div>
+            <div className="route-viewer-stat-card">
+              <div className="route-viewer-stat-label">Общее время</div>
+              <div className="route-viewer-stat-value">{formatTime(path.totalDuration)}</div>
             </div>
           </div>
 
-          <button onClick={onNewRoute} className="route-viewer-new-route-btn">
-            <Home size={16} />
-            Построить новый маршрут
-          </button>
+
+
+          <p className="route-viewer-hint">
+            <ArrowDownUp /> Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
+          </p>
+
+          {/* Выбор этажа */}
+          <div className="route-viewer-floor-select-sidebar">
+            <label className="floor-select-label">Выберите этаж:</label>
+            <div className="floor-select-wrapper">
+              <select
+                value={selectedFloor}
+                onChange={(e) => setSelectedFloor(Number(e.target.value))}
+                className="floor-select-dropdown"
+              >
+                {floors.map(floor => (
+                  <option key={floor.id} value={floor.floor_number}>
+                    {floor.floor_number} этаж
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="floor-select-icon" />
+            </div>
+          </div>
+          <div className="route-viewer-actions">
+            <button onClick={onNewRoute} className="route-viewer-new-route-btn-desktop">
+              <Route size={16} />
+              Построить новый маршрут
+            </button>
+          </div>
+        </div>
+        {/* Центральная область - карта */}
+        <div className="route-viewer-map-area">
+          <Card className="route-viewer-card">
+            <div className="route-viewer-card-inner">
+              <div className="route-viewer-map-wrapper">
+                <FloorMap
+                  points={pointsOnCurrentFloor}
+                  edges={edgesOnCurrentFloor}
+                  floorNumber={currentFloorObj?.floor_number || selectedFloor}
+                  floorPlanUrl={floorPlanUrl}
+                  selectedFromPoint={null}
+                  selectedToPoint={null}
+                  path={enhancedPath}
+                  currentPointId={currentPoint?.id}
+                  onPointSelect={() => {}}
+                  onFloorTransition={handleFloorTransition}
+                  allPoints={allPoints}
+                  allEdges={allEdges}
+                  scale={mapScale}
+                  position={mapPosition}
+                  onZoomChange={(scale, position) => {
+                    setMapScale(scale);
+                    setMapPosition(position);
+                  }}
+                />
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { Circle, CircleDashed } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import { Point, Edge } from '../../data/navigationData';
 import { FloorMapCanvas } from './FloorMapCanvas';
@@ -23,6 +24,7 @@ interface FloorMapProps {
   onPointDrag?: (pointId: number, x: number, y: number) => void;
   onPointSave?: (pointId: number, x: number, y: number) => void;
   onPointHover?: (pointId: number | null) => void;  // ← добавить
+  hideControls?: boolean;  // ← НОВЫЙ ПРОПС для скрытия контролов
 }
 
 export const FloorMap = ({ 
@@ -44,7 +46,8 @@ export const FloorMap = ({
   isEditMode = false,
   onPointDrag,
   onPointSave,
-  onPointHover  // ← добавить
+  onPointHover,
+  hideControls
 }: FloorMapProps) => {
   const [selectMode, setSelectMode] = useState<'from' | 'to'>('from');
   const [hoveredPointId, setHoveredPointId] = useState<number | null>(null);
@@ -298,28 +301,32 @@ export const FloorMap = ({
         <button onClick={handleZoomOut} className="zoom-btn" title="Отдалить">−</button>
       </div>
 
-      <div className="floor-map-controls">
-        <button
-          onClick={() => setSelectMode('from')}
-          className={`floor-map-control-btn ${
-            selectMode === 'from' 
-              ? 'floor-map-control-btn-from' 
-              : 'floor-map-control-btn-from-inactive'
-          }`}
-        >
-          🟦 Выбрать начало
-        </button>
-        <button
-          onClick={() => setSelectMode('to')}
-          className={`floor-map-control-btn ${
-            selectMode === 'to' 
-              ? 'floor-map-control-btn-to' 
-              : 'floor-map-control-btn-to-inactive'
-          }`}
-        >
-          🔴 Выбрать конец
-        </button>
-      </div> 
+      {!hideControls && (
+        <div className="floor-map-controls">
+          <button
+            onClick={() => setSelectMode('from')}
+            className={`floor-map-control-btn ${
+              selectMode === 'from' 
+                ? 'floor-map-control-btn-from' 
+                : 'floor-map-control-btn-from-inactive'
+            }`}
+          >
+            {selectMode === 'from' ? <Circle size={16} /> : <CircleDashed size={16} />}
+            Выбрать начало
+          </button>
+          <button
+            onClick={() => setSelectMode('to')}
+            className={`floor-map-control-btn ${
+              selectMode === 'to' 
+                ? 'floor-map-control-btn-to' 
+                : 'floor-map-control-btn-to-inactive'
+            }`}
+          >
+            {selectMode === 'to' ? <Circle size={16} /> : <CircleDashed size={16} />}
+            Выбрать конец
+          </button>
+        </div>
+      )}
     </div>
   );
 };
