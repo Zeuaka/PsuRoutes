@@ -523,12 +523,12 @@
 }
 
 .route-builder-search-input:hover {
-  border-color: rgba(167,60,76);
+  border-color: #a2a4a9;;
 }
 
 .route-builder-search-input:focus {
   outline: none;
-  border-color: rgba(167,60,76);
+  border-color: #a2a4a9;;
 }
 
 .route-builder-modal-results {

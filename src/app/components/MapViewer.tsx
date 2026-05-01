@@ -10,6 +10,7 @@ import { ZoomControls } from './controls/ZoomControls';
 import { SearchBar } from './controls/SearchBar';
 import { LocationList } from './controls/LocationList';
 import { BuildingDetails } from './buildings/BuildingDetails';
+import { CampusSearch } from './buildings/CampusSearch'
 
 // Тип для локации
 interface Location {
@@ -219,7 +220,6 @@ export function MapViewer() {
     setScale(prev => Math.min(Math.max(prev + delta, 0.5), 3));
   };
 
-  // Обработчик клика по корпусу
   const handleBuildingClick = (id: string, name: string) => {
     setSelectedBuilding({ id, name });
   };
@@ -228,7 +228,6 @@ export function MapViewer() {
     setSelectedBuilding(null);
   };
 
-  // Фильтрация и группировка для поиска/списка
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -245,14 +244,23 @@ export function MapViewer() {
     return () => window.removeEventListener('mouseup', handleMouseUpGlobal);
   }, []);
 
-  // Если выбран корпус — показываем детали
   if (selectedBuilding) {
     return <BuildingDetails building={selectedBuilding} onBack={handleBackToMap} />;
   }
 
+  const handleBuildingSearchSelect = (buildingId: string, buildingName: string) => {
+    const building = locations.find(l => l.id === buildingId);
+    if (building) {
+      setSelectedBuilding(building);
+    }
+  };
+
   return (
     <div className="relative w-full h-screen bg-[rgba(137,144,126)] overflow-hidden">
-      {/* Слой с картой - низкий z-index */}
+      <CampusSearch 
+        buildings={locations.map(l => ({ id: l.id, name: l.name, category: l.category }))}
+        onBuildingSelect={handleBuildingSearchSelect}
+      />
       <div
         ref={containerRef}
         className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing grid place-items-center"
@@ -272,7 +280,6 @@ export function MapViewer() {
             height: imageDimensions.height || '100%',
           }}
         >
-          {/* Карта */}
           <img
             src={mapImage}
             alt="Карта кампуса ПГНИУ"
@@ -287,7 +294,6 @@ export function MapViewer() {
             }}
           />
           
-          {/* Маркеры */}
           <div 
             className="absolute top-0 left-0"
             style={{
