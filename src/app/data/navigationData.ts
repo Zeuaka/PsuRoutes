@@ -1,5 +1,5 @@
 // src/app/data/navigationData.ts
-export type PointType = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type PointType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export interface Building {
   id: number;

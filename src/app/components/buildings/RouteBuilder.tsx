@@ -67,14 +67,16 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   
   // Результаты поиска в зависимости от цели
   const searchResults = searchTarget === 'from' 
-    ? localPoints.filter(point =>
-        point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : allBuildingsPoints.filter(point =>
-        point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+  ? localPoints.filter(point =>
+      (point.type === 1 || point.type === 8) &&  // ← только типы 1 и 8
+      (point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase())))
+    )
+  : allBuildingsPoints.filter(point =>
+      (point.type === 1 || point.type === 8) &&  // ← только типы 1 и 8
+      (point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase())))
+    );
 
   // Функция для получения названия здания для точки (для "Куда")
   const getPointBuildingInfo = (point: Point) => {
