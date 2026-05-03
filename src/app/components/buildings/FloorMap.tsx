@@ -242,6 +242,8 @@ export const FloorMap = ({
           cursor: isDragging ? 'grabbing' : (isEditMode ? 'crosshair' : 'grab'),
           backgroundColor: '#f3f4f6',
           borderRadius: '0.75rem',
+          alignItems: 'center', 
+          justifyContent: 'center',
         }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}

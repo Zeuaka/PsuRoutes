@@ -1,7 +1,7 @@
 // src/app/components/buildings/PanoramaViewer.tsx
 import { useEffect, useRef, useState } from 'react';
 import 'pannellum/build/pannellum.css';
-import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowLeft, Maximize2, Minimize2, TriangleAlert, RefreshCcw } from 'lucide-react';
 import './panoramaViewerStyles.css';
 
 interface PanoramaViewerProps {
@@ -171,8 +171,8 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         </div>
         <div className="panorama-viewer-content">
           <div className="panorama-viewer-placeholder">
-            <div className="panorama-viewer-placeholder-icon">🔄</div>
-            <h3 className="panorama-viewer-placeholder-title">360° панорама в разработке</h3>
+            <div className="panorama-viewer-placeholder-icon"><RefreshCcw size={40}/></div>
+            <h3 className="panorama-viewer-placeholder-title">Панорама в разработке</h3>
             <p className="panorama-viewer-placeholder-text">
               Для корпуса {buildingName} панорама скоро появится
             </p>
@@ -210,7 +210,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
         )}
         {error && (
           <div className="panorama-viewer-error">
-            <div className="panorama-viewer-error-icon">⚠️</div>
+            <div className="panorama-viewer-error-icon"><TriangleAlert size={40}/></div>
             <p className="panorama-viewer-error-text">{error}</p>
             <button onClick={onBack} className="panorama-viewer-error-btn">
               Вернуться

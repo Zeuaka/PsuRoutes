@@ -4,7 +4,7 @@
 .floor-map-container {
   position: relative;
   width: 100%;
-  /* Убираем max-width и margin - карта на всю ширину */
+  height: 100%;
   background-color: #f3f4f6;
   border-radius: 0.75rem;
   overflow: hidden;
@@ -14,8 +14,9 @@
 .zoomable-content {
   position: relative;
   width: 100%;
+  flex: 1;
+  min-height: 0;
   height: 100%;
-  /* Убираем max-height - пусть занимает всё доступное пространство */
   overflow: hidden;
   cursor: grab;
   background-color: #f3f4f6;
@@ -34,6 +35,27 @@
   flex-direction: column;
   gap: 0.5rem;
   z-index: 30;
+}
+
+@media (max-width: 768px) {
+  .floor-map-container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .zoomable-content {
+    min-height: 100vh; /* тоже на весь экран */
+  }
+}
+
+@media (min-width: 769px) {
+  .floor-map-container {
+    height: 100%;
+  }
+
+  .zoomable-content {
+    height: 100%;
+  }
 }
 
 @media (min-width: 769px) {
