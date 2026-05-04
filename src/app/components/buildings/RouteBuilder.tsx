@@ -1,6 +1,6 @@
 import { ArrowLeft, Navigation, Search, Target, CheckCircle, Camera, ChevronDown, ArrowDownUp } from 'lucide-react';
 import { Card } from '../ui/card';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
 import { FloorMap } from './FloorMap';
 import { RouteViewer } from './RouteViewer';
@@ -29,14 +29,21 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [searchTarget, setSearchTarget] = useState<'from' | 'to'>('from');
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [showRouteViewer, setShowRouteViewer] = useState(false);
-  const [showAllPoints, setShowAllPoints] = useState(false);
+  
+  // Состояние для фильтрации
+  const [isRouteMode, setIsRouteMode] = useState(false);
+  const [routePointIds, setRoutePointIds] = useState<Set<number>>(new Set());
+  
+  // Отдельный массив для отображения
+  const [displayPoints, setDisplayPoints] = useState<Point[]>([]);
+  
+  // Ключ для принудительного пересоздания FloorMap
+  const [renderKey, setRenderKey] = useState(0);
   
   const [mapScale, setMapScale] = useState(1);
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
   const [isEditMode, setIsEditMode] = useState(false);
   const [localPoints, setLocalPoints] = useState<Point[]>([]);
-  const [routePointIds, setRoutePointIds] = useState<Set<number>>(new Set());
-  const [resetKey, setResetKey] = useState(0);
   
   const [allBuildingsPoints, setAllBuildingsPoints] = useState<Point[]>([]);
   const [loadingAllPoints, setLoadingAllPoints] = useState(false);
@@ -60,6 +67,30 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setLocalPoints(allPoints);
   }, [allPoints]);
 
+  // Функция обновления отображаемых точек
+  const updateDisplayPoints = () => {
+    const currentFloorPoints = localPoints.filter(p => {
+      const pf = floors.find(f => f.id === p.floor_id);
+      return pf?.floor_number === selectedFloor;
+    });
+    
+    let newDisplayPoints;
+    if (isRouteMode && routePointIds.size > 0) {
+      newDisplayPoints = currentFloorPoints.filter(p => routePointIds.has(p.id));
+      console.log(`🔴 Режим маршрута: ${newDisplayPoints.length} точек из ${currentFloorPoints.length}`);
+    } else {
+      newDisplayPoints = currentFloorPoints.filter(p => p.type === 1 || p.type === 8);
+      console.log(`🟢 Обычный режим: ${newDisplayPoints.length} точек из ${currentFloorPoints.length}`);
+    }
+    
+    setDisplayPoints([...newDisplayPoints]);
+  };
+
+  // Обновляем при изменении зависимостей
+  useEffect(() => {
+    updateDisplayPoints();
+  }, [localPoints, floors, selectedFloor, isRouteMode, routePointIds]);
+
   const hasPanorama = panoramas.length > 0;
   
   const searchResults = searchTarget === 'from' 
@@ -80,27 +111,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     }
     return `Корпус ${point.building_id}`;
   };
-
-  // Фильтрация отображаемых точек с использованием useMemo
-  const filteredPoints = useMemo(() => {
-    const allFloorPoints = localPoints.filter(p => {
-      const pf = floors.find(f => f.id === p.floor_id);
-      return pf?.floor_number === selectedFloor;
-    });
-    
-    console.log(`🔍 Фильтрация: showAllPoints=${showAllPoints}, routePointIds.size=${routePointIds.size}, этаж=${selectedFloor}`);
-    console.log(`🔍 Всего точек на этаже: ${allFloorPoints.length}`);
-    
-    if (showAllPoints && routePointIds.size > 0) {
-      const routeFloorPoints = allFloorPoints.filter(p => routePointIds.has(p.id));
-      console.log(`🔍 Только маршрут: ${routeFloorPoints.length} точек из ${allFloorPoints.length}`);
-      return routeFloorPoints;
-    }
-    
-    const normalPoints = allFloorPoints.filter(p => p.type === 1 || p.type === 8);
-    console.log(`🔍 Обычный режим: ${normalPoints.length} точек (типы 1 и 8)`);
-    return normalPoints;
-  }, [localPoints, floors, selectedFloor, showAllPoints, routePointIds]);
 
   const handleFloorTransition = (targetFloor: number) => {
     setSelectedFloor(targetFloor);
@@ -123,14 +133,14 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   const handleFindPath = () => {
     if (selectedFromPoint && selectedToPoint && localPoints.length && allEdges.length) {
-      setShowAllPoints(true);
       const result = findShortestPath(localPoints, allEdges, selectedFromPoint, selectedToPoint);
       if (result) {
         const pointIds = new Set(result.points.map(p => p.id));
-        console.log(`✅ Маршрут найден: ${result.points.length} точек`);
         setRoutePointIds(pointIds);
+        setIsRouteMode(true);
         setPathResult(result);
-        setResetKey(prev => prev + 1);
+        // Принудительно обновляем ключ для перерендера FloorMap
+        setRenderKey(prev => prev + 1);
         setShowRouteViewer(true);
       } else {
         alert('Путь не найден');
@@ -142,9 +152,9 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setSelectedFromPoint(null);
     setSelectedToPoint(null);
     setPathResult(null);
-    setShowAllPoints(false);
+    setIsRouteMode(false);
     setRoutePointIds(new Set());
-    setResetKey(prev => prev + 1);
+    setRenderKey(prev => prev + 1);
   };
 
   const openSearch = (target: 'from' | 'to') => {
@@ -358,8 +368,8 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
             <div className="route-builder-card-inner">
               <div className="route-builder-map-wrapper">
                 <FloorMap
-                  key={resetKey}
-                  points={filteredPoints}
+                  key={renderKey}
+                  points={displayPoints}
                   edges={[]}
                   floorNumber={selectedFloor}
                   floorPlanUrl={floorPlanUrl}
@@ -379,7 +389,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   isEditMode={isEditMode}
                   onPointDrag={handlePointDrag}
                   onPointSave={savePointCoordinates}
-                  routePointIds={routePointIds}
                 />
               </div>
             </div>

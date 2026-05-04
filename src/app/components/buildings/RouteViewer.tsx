@@ -52,9 +52,14 @@ export const RouteViewer = ({
   
   const floorPlanUrl = currentFloorObj?.floor_plan_url;
   
+  // 🔧 ИСПРАВЛЕНО: показываем только точки, которые входят в маршрут
+  const routePointIds = new Set(path.points.map(p => p.id));
+  
   const pointsOnCurrentFloor = allPoints.filter(p => {
     const pointFloor = floors.find(f => f.id === p.floor_id);
-    return pointFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
+    // Показываем только точки маршрута на текущем этаже
+    return routePointIds.has(p.id) && 
+           pointFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
   });
 
   const edgesOnCurrentFloor = path.edges.filter(edge => {
@@ -105,7 +110,7 @@ export const RouteViewer = ({
           (e.from_point_id === fromPointId && e.to_point_id === p.id) ||
           (e.to_point_id === fromPointId && e.from_point_id === p.id)
         );
-        return hasConnection;
+        return hasConnection && routePointIds.has(p.id);
       });
       if (nextPointOnTargetFloor) {
         const stepIndex = path.points.findIndex(p => p.id === nextPointOnTargetFloor.id);
@@ -128,8 +133,9 @@ export const RouteViewer = ({
   };
 
   const searchResults = allPoints.filter(point =>
-    point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    routePointIds.has(point.id) &&
+    (point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
   const handleSearchSelect = (point: Point) => {

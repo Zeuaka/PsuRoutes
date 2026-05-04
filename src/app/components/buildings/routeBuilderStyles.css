@@ -769,4 +769,19 @@
     font-size: 0.8rem;
   }
 }
+.force-reset-btn {
+  background-color: #dc2626;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.force-reset-btn:hover {
+  background-color: #b91c1c;
+  transform: scale(1.02);
+}
 

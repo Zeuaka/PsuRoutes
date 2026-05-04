@@ -138,10 +138,11 @@
 .panorama-viewer-error-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
+  color: #ffffff;
 }
 
 .panorama-viewer-error-text {
-  color: #ef4444;
+  color: #ffffff;
   margin-bottom: 1.5rem;
   max-width: 400px;
 }
@@ -176,6 +177,7 @@
 .panorama-viewer-placeholder-icon {
   font-size: 5rem;
   margin-bottom: 1.5rem;
+  color: #ffffff;
 }
 
 .panorama-viewer-placeholder-title {
