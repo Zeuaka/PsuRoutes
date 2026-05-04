@@ -23,8 +23,9 @@ interface FloorMapProps {
   isEditMode?: boolean;
   onPointDrag?: (pointId: number, x: number, y: number) => void;
   onPointSave?: (pointId: number, x: number, y: number) => void;
-  onPointHover?: (pointId: number | null) => void;  // ← добавить
-  hideControls?: boolean;  // ← НОВЫЙ ПРОПС для скрытия контролов
+  onPointHover?: (pointId: number | null) => void;
+  hideControls?: boolean;
+  routePointIds?: Set<number>;
 }
 
 export const FloorMap = ({ 
@@ -47,7 +48,8 @@ export const FloorMap = ({
   onPointDrag,
   onPointSave,
   onPointHover,
-  hideControls
+  hideControls = false,
+  routePointIds
 }: FloorMapProps) => {
   const [selectMode, setSelectMode] = useState<'from' | 'to'>('from');
   const [hoveredPointId, setHoveredPointId] = useState<number | null>(null);
@@ -55,24 +57,20 @@ export const FloorMap = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
   
-  // Состояние для размеров плана
   const [planDimensions, setPlanDimensions] = useState({ width: 400, height: 400 });
   
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Загружаем размеры изображения плана
   useEffect(() => {
     if (floorPlanUrl) {
       const img = new Image();
       img.onload = () => {
         setPlanDimensions({ width: img.width, height: img.height });
-        console.log(`План этажа ${floorNumber}: ${img.width} x ${img.height}`);
       };
       img.src = floorPlanUrl;
     }
   }, [floorPlanUrl, floorNumber]);
 
-  // Используем внешние значения, если они переданы, иначе внутренние
   const [internalScale, setInternalScale] = useState(0.1);
   const [internalPosition, setInternalPosition] = useState({ x: 0, y: 0 });
 
@@ -130,14 +128,12 @@ export const FloorMap = ({
     }
   };
 
-  // Обработчик начала перетаскивания точки (только в режиме редактирования)
   const handlePointMouseDown = (e: React.MouseEvent, pointId: number) => {
     if (!isEditMode) return;
     e.stopPropagation();
     setDraggedPoint(pointId);
   };
 
-  // Обработчик перемещения мыши для перетаскивания точки
   const handleGlobalMouseMove = (e: MouseEvent) => {
     if (!isEditMode || draggedPoint === null || !containerRef.current) return;
     
@@ -145,7 +141,6 @@ export const FloorMap = ({
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
-    // Ограничиваем координаты от 0 до 100
     const clampedX = Math.min(Math.max(x, 0), 100);
     const clampedY = Math.min(Math.max(y, 0), 100);
     
@@ -154,19 +149,16 @@ export const FloorMap = ({
     }
   };
 
-  // Обработчик отпускания мыши для сохранения координат
   const handleGlobalMouseUp = () => {
     if (draggedPoint !== null && onPointSave) {
       const point = points.find(p => p.id === draggedPoint);
       if (point && point.x_coord !== null && point.y_coord !== null) {
-        console.log('Сохранение точки:', draggedPoint, point.x_coord, point.y_coord);
         onPointSave(draggedPoint, point.x_coord, point.y_coord);
       }
     }
     setDraggedPoint(null);
   };
 
-  // Добавляем/удаляем глобальные обработчики
   React.useEffect(() => {
     if (isEditMode) {
       window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -228,7 +220,6 @@ export const FloorMap = ({
     updateZoom(Math.max(scale / 1.2, 0.05), position);
   };
 
-  // Убираем заглушку - всегда показываем карту, даже если нет точек
   return (
     <div className="floor-map-container">
       <div
@@ -271,7 +262,6 @@ export const FloorMap = ({
             />
           )}
 
-          {/* SVG-холст с отрисовкой карты - рендерим даже если нет точек */}
           <FloorMapCanvas
             points={floorPoints}
             edges={floorEdges}
@@ -290,7 +280,8 @@ export const FloorMap = ({
             isEditMode={isEditMode}
             onPointMouseDown={handlePointMouseDown}
             draggedPointId={draggedPoint}
-            planDimensions={planDimensions}  // ← передаём размеры плана
+            planDimensions={planDimensions}
+            routePointIds={routePointIds}
           />
         </div>
       </div>

@@ -18,6 +18,7 @@ interface FloorMapCanvasProps {
   onPointMouseDown?: (e: React.MouseEvent, pointId: number) => void;
   draggedPointId?: number | null;
   planDimensions?: { width: number; height: number };
+  routePointIds?: Set<number>;
 }
 
 export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
@@ -37,24 +38,17 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
   onPointMouseDown,
   draggedPointId,
   planDimensions = { width: 400, height: 400 },
+  routePointIds,
 }) => {
   const getPointPosition = (point: Point) => {
     let x = point.x_coord ?? 50;
     let y = point.y_coord ?? 50;
     
-    // Если координаты > 100, считаем что это пиксели, а не проценты
     if (x > 100 || y > 100) {
-      // Масштабируем из пикселей в проценты (0-100)
       x = (x / planDimensions.width) * 100;
       y = (y / planDimensions.height) * 100;
-      
-      // Логирование для отладки (только для первых нескольких точек)
-      if (point.id && point.id % 50 === 0) {
-        console.log(`Точка ${point.id}: (${point.x_coord}, ${point.y_coord}) → (${x.toFixed(1)}, ${y.toFixed(1)}) | План: ${planDimensions.width}x${planDimensions.height}`);
-      }
     }
     
-
     x = Math.min(Math.max(x, 0), 100);
     y = Math.min(Math.max(y, 0), 100);
     

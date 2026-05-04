@@ -43,7 +43,6 @@ export const RouteViewer = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTarget, setSearchTarget] = useState<'from' | 'to'>('from');
   
-  // Состояние для зума карты
   const [mapScale, setMapScale] = useState(1);
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
 
@@ -128,14 +127,12 @@ export const RouteViewer = ({
     return secs > 0 ? `${mins} мин ${secs} сек` : `${mins} мин`;
   };
 
-  // Поиск точки для навигации
   const searchResults = allPoints.filter(point =>
     point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleSearchSelect = (point: Point) => {
-    // Находим индекс точки в маршруте
     const stepIndex = path.points.findIndex(p => p.id === point.id);
     if (stepIndex !== -1) {
       setCurrentStep(stepIndex);
@@ -207,7 +204,6 @@ export const RouteViewer = ({
             </div>
           )}
 
-          {/* Информация о текущей точке */}
           <div className="route-viewer-current-point-card">
             <div className="route-viewer-current-point-header">
               <span className="route-viewer-current-point-label">Текущая точка</span>
@@ -222,7 +218,6 @@ export const RouteViewer = ({
             )}
           </div>
 
-          {/* Кнопки навигации по шагам */}
           <div className="route-viewer-step-navigation">
             <button 
               onClick={goToPrevStep} 
@@ -242,7 +237,6 @@ export const RouteViewer = ({
             </button>
           </div>
 
-          {/* Кнопка панорамы */}
           {hasCurrentPanorama && (
             <button 
               onClick={() => handleOpenPanorama(currentPoint!.id)} 
@@ -253,9 +247,6 @@ export const RouteViewer = ({
             </button>
           )}
 
-
-
-          {/* Статистика маршрута */}
           <div className="route-viewer-stats">
             <div className="route-viewer-stat-card">
               <div className="route-viewer-stat-label">Всего расстояние</div>
@@ -267,13 +258,10 @@ export const RouteViewer = ({
             </div>
           </div>
 
-
-
           <p className="route-viewer-hint">
             <ArrowDownUp /> Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
           </p>
 
-          {/* Выбор этажа */}
           <div className="route-viewer-floor-select-sidebar">
             <label className="floor-select-label">Выберите этаж:</label>
             <div className="floor-select-wrapper">
@@ -291,6 +279,7 @@ export const RouteViewer = ({
               <ChevronDown size={16} className="floor-select-icon" />
             </div>
           </div>
+          
           <div className="route-viewer-actions">
             <button onClick={onNewRoute} className="route-viewer-new-route-btn-desktop">
               <Route size={16} />
@@ -298,7 +287,7 @@ export const RouteViewer = ({
             </button>
           </div>
         </div>
-        {/* Центральная область - карта */}
+
         <div className="route-viewer-map-area">
           <Card className="route-viewer-card">
             <div className="route-viewer-card-inner">
