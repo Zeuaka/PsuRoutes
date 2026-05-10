@@ -33,10 +33,8 @@ export interface Edge {
   from_point_id: number;
   to_point_id: number;
   distance_meters: number;
-  duration_minutes: number;
   direction_text: string | null;
   floor_transition: boolean;
-  is_bidirectional: boolean;
 }
 
 export interface Panorama {

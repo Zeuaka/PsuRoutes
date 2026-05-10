@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
 import mapImage from "./campus-map.svg";
 import { ClickableBuilding } from './buildings/ClickableBuilding';
+import { PlusCircle, ChevronDown, X } from 'lucide-react';
 
 // Импорты компонентов
 import { BuildingMarker } from './buildings/BuildingMarker';
@@ -10,7 +11,8 @@ import { ZoomControls } from './controls/ZoomControls';
 import { SearchBar } from './controls/SearchBar';
 import { LocationList } from './controls/LocationList';
 import { BuildingDetails } from './buildings/BuildingDetails';
-import { CampusSearch } from './buildings/CampusSearch'
+import { CampusSearch } from './buildings/CampusSearch';
+import { PointEditor } from './buildings/PointEditor';
 
 // Тип для локации
 interface Location {
@@ -145,7 +147,7 @@ const locations: Location[] = [
     width: '292px',
     height: '292px'
   },
-    { 
+  { 
     id: '4', 
     name: 'Корпус № 4', 
     category: 'Колледж', 
@@ -165,6 +167,9 @@ export function MapViewer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocationList, setShowLocationList] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<{ id: string; name: string } | null>(null);
+  const [showPointEditor, setShowPointEditor] = useState(false);
+  const [editorBuilding, setEditorBuilding] = useState<{ id: number; name: string } | null>(null);
+  const [showBuildingSelector, setShowBuildingSelector] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
@@ -228,6 +233,17 @@ export function MapViewer() {
     setSelectedBuilding(null);
   };
 
+  const handleOpenPointEditor = (buildingId: number, buildingName: string) => {
+    setEditorBuilding({ id: buildingId, name: buildingName });
+    setShowPointEditor(true);
+    setShowBuildingSelector(false);
+  };
+
+  const handleClosePointEditor = () => {
+    setShowPointEditor(false);
+    setEditorBuilding(null);
+  };
+
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -243,6 +259,17 @@ export function MapViewer() {
     window.addEventListener('mouseup', handleMouseUpGlobal);
     return () => window.removeEventListener('mouseup', handleMouseUpGlobal);
   }, []);
+
+  // Если открыт редактор точек
+  if (showPointEditor && editorBuilding) {
+    return (
+      <PointEditor
+        buildingId={editorBuilding.id}
+        buildingName={editorBuilding.name}
+        onBack={handleClosePointEditor}
+      />
+    );
+  }
 
   if (selectedBuilding) {
     return <BuildingDetails building={selectedBuilding} onBack={handleBackToMap} />;
@@ -261,6 +288,50 @@ export function MapViewer() {
         buildings={locations.map(l => ({ id: l.id, name: l.name, category: l.category }))}
         onBuildingSelect={handleBuildingSearchSelect}
       />
+      
+      {/* Кнопка для выбора корпуса и добавления точек */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+        {/* Кнопка-триггер */}
+        <button
+          onClick={() => setShowBuildingSelector(!showBuildingSelector)}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+        >
+          <PlusCircle size={20} />
+          Добавить точки
+          <ChevronDown size={16} className={`transition-transform ${showBuildingSelector ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {/* Выпадающий список корпусов */}
+        {showBuildingSelector && (
+          <div className="bg-white rounded-lg shadow-xl overflow-hidden w-64 animate-in slide-in-from-bottom-2">
+            <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Выберите корпус</span>
+              <button
+                onClick={() => setShowBuildingSelector(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {locations.map((location) => (
+                <button
+                  key={location.id}
+                  onClick={() => handleOpenPointEditor(parseInt(location.id), location.name)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-0"
+                >
+                  <div>
+                    <div className="font-medium text-gray-800">{location.name}</div>
+                    <div className="text-xs text-gray-500">{location.category}</div>
+                  </div>
+                  <PlusCircle size={16} className="text-purple-500 opacity-50" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div
         ref={containerRef}
         className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing grid place-items-center"
