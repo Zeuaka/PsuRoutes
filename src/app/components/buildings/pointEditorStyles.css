@@ -655,9 +655,104 @@
   cursor: pointer;
   transition: all 0.2s;
 }
+/* Секции существующих и новых точек */
+.point-editor-existing-section,
+.point-editor-new-section {
+  margin-bottom: 1rem;
+}
+
+.point-editor-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.point-editor-point-item.existing {
+  opacity: 0.8;
+  background: #f0fdf4;
+  cursor: pointer;
+}
+
+.point-editor-point-item.existing:hover {
+  opacity: 1;
+  background: #dcfce7;
+}
+
+.point-editor-point-badge {
+  font-size: 0.6rem;
+  padding: 0.125rem 0.375rem;
+  background: #16a34a;
+  color: white;
+  border-radius: 0.25rem;
+}
+.point-editor-points-list-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+  padding: 0.5rem;
+}
+.point-editor-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.point-editor-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.point-editor-tab.active {
+  color: #16a34a;
+  border-bottom: 2px solid #16a34a;
+}
+
+.point-editor-tab:hover:not(.active) {
+  color: #374151;
+  background: #f3f4f6;
+}
 
 .point-editor-save-edge-btn:hover {
   background: #15803d;
+}
+
+.distance-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calculating-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.auto-calc-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: #16a34a;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 @keyframes spin {
   from { transform: rotate(0deg); }
