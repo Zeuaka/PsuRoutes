@@ -32,22 +32,33 @@ interface TempEdge {
   floor_transition: boolean;
 }
 
-// Конфигурация масштаба для разных корпусов (пиксели в метры)
-// Рассчитывается как: реальная_ширина_корпуса / ширина_на_плане_в_пикселях
+// Конфигурация масштаба для разных корпусов
 const buildingScaleConfig: Record<number, number> = {
-  1: 0.2148,
-  2: 0.2148,
-  3: 0.2148,
-  4: 0.2148,
-  5: 0.2148,
-  6: 0.2148,
-  7: 0.2148,
-  8: 0.2148,
-  9: 0.2148,
-  10: 0.2148,
-  11: 0.2148,
-  12: 0.2148,
-  13: 0.2148,
+
+  1: 0.1733,
+  2: 0.1733,
+  3: 0.1733,
+  4: 0.1733,
+  5: 0.1733,
+  6: 0.1733,
+  7: 0.1733,
+  8: 0.1733,
+  9: 0.1733,
+  10: 0.1733,
+  11: 0.1733,
+  12: 0.1733,
+  16: 0.1733,
+};
+
+// Функция для генерации ID точки: корпус (2 цифры) + этаж (2 цифры) + порядковый (3 цифры)
+const generatePointId = (buildingId: number, floorNumber: number, sequence: number): number => {
+  return buildingId * 100000 + floorNumber * 1000 + sequence;
+};
+
+// Функция для генерации ID ребра: корпус (2 цифры) + 1 + порядковый (4 цифры)
+const generateEdgeId = (buildingId: number, sequence: number): number => {
+  return buildingId * 100000 + 10000 + sequence;
+>>>>>>> 1759563 (VicSergEditXчерепушка)
 };
 
 export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorProps) => {
@@ -93,55 +104,44 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   
   // Получаем коэффициент пересчёта для текущего корпуса
   const getMetersPerPixel = (): number => {
-    return buildingScaleConfig[buildingId] || 0.1;
-  };
-  
-  // Функция для расчёта расстояния между двумя точками по их координатам
-const calculateDistance = (point1Id: number, point2Id: number): number => {
-  // Ищем точки среди всех доступных
-  let point1 = allAvailablePoints.find(p => p.id === point1Id);
-  let point2 = allAvailablePoints.find(p => p.id === point2Id);
-  
-  if (!point1 || !point2) return 0;
-  
-  // Получаем координаты (в процентах)
-  let x1 = point1.x_coord !== undefined ? point1.x_coord : point1.x;
-  let y1 = point1.y_coord !== undefined ? point1.y_coord : point1.y;
-  let x2 = point2.x_coord !== undefined ? point2.x_coord : point2.x;
-  let y2 = point2.y_coord !== undefined ? point2.y_coord : point2.y;
-  
-  // Переводим проценты в пиксели
-  const px1 = (x1 / 100) * planDimensions.width;
-  const py1 = (y1 / 100) * planDimensions.height;
-  const px2 = (x2 / 100) * planDimensions.width;
-  const py2 = (y2 / 100) * planDimensions.height;
-  
-  // Вычисляем евклидово расстояние в пикселях
-  const pixelDistance = Math.sqrt(Math.pow(px2 - px1, 2) + Math.pow(py2 - py1, 2));
-  
-  // Коэффициент пересчёта пикселей в метры
-  const metersPerPixel = getMetersPerPixel();
-  const meters = pixelDistance * metersPerPixel;
-  
-  // Округляем до 2 знаков после запятой (сантиметры)
-  return Math.round(meters * 100) / 100;
-};
-  
-  // Автоматический расчёт расстояния при выборе точек
-  const handleEdgePointsSelect = (fromId: number | null, toId: number | null) => {
-    setEdgeFromPoint(fromId);
-    setEdgeToPoint(toId);
-    
-    if (fromId && toId && fromId !== toId) {
-      setIsCalculating(true);
-      const distance = calculateDistance(fromId, toId);
-      setEdgeDistance(distance);
-      setIsCalculating(false);
-    }
+    return buildingScaleConfig[buildingId] || 0.1733;
   };
   
   // Получаем точки из БД на текущем этаже
   const existingPointsOnFloor = allPoints.filter(p => p.floor_id === floorId && p.building_id === buildingId);
+  
+  // Получаем рёбра из БД на текущем этаже
+  const existingEdgesOnFloor = allEdges.filter(e => {
+    const fromPoint = allPoints.find(p => p.id === e.from_point_id);
+    const toPoint = allPoints.find(p => p.id === e.to_point_id);
+    return fromPoint?.floor_id === floorId && toPoint?.floor_id === floorId;
+  });
+  
+  // Получаем следующий порядковый номер для точки
+  const getNextPointSequence = (floorNum: number): number => {
+    const allPointsInFloor = [
+      ...existingPointsOnFloor,
+      ...tempPoints.filter(p => p.floor_number === floorNum)
+    ];
+    
+    if (allPointsInFloor.length === 0) return 1;
+    
+    const maxSequence = Math.max(...allPointsInFloor.map(p => p.id % 1000));
+    return maxSequence + 1;
+  };
+  
+  // Получаем следующий порядковый номер для ребра
+  const getNextEdgeSequence = (): number => {
+    const allEdgesInBuilding = [
+      ...existingEdgesOnFloor,
+      ...tempEdges
+    ];
+    
+    if (allEdgesInBuilding.length === 0) return 1;
+    
+    const maxSequence = Math.max(...allEdgesInBuilding.map(e => e.id % 10000));
+    return maxSequence + 1;
+  };
   
   // Все доступные точки (существующие + временные)
   const allAvailablePoints = [...existingPointsOnFloor, ...tempPoints.map(p => ({
@@ -153,6 +153,30 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     x_coord: p.x,
     y_coord: p.y,
   }))];
+  
+  // Функция для расчёта расстояния между двумя точками
+  const calculateDistance = (point1Id: number, point2Id: number): number => {
+    let point1 = allAvailablePoints.find(p => p.id === point1Id);
+    let point2 = allAvailablePoints.find(p => p.id === point2Id);
+    
+    if (!point1 || !point2) return 0;
+    
+    let x1 = point1.x_coord !== undefined ? point1.x_coord : point1.x;
+    let y1 = point1.y_coord !== undefined ? point1.y_coord : point1.y;
+    let x2 = point2.x_coord !== undefined ? point2.x_coord : point2.x;
+    let y2 = point2.y_coord !== undefined ? point2.y_coord : point2.y;
+    
+    const px1 = (x1 / 100) * planDimensions.width;
+    const py1 = (y1 / 100) * planDimensions.height;
+    const px2 = (x2 / 100) * planDimensions.width;
+    const py2 = (y2 / 100) * planDimensions.height;
+    
+    const pixelDistance = Math.sqrt(Math.pow(px2 - px1, 2) + Math.pow(py2 - py1, 2));
+    const metersPerPixel = getMetersPerPixel();
+    const meters = pixelDistance * metersPerPixel;
+    
+    return Math.round(meters * 100) / 100;
+  };
   
   // Преобразование существующих точек в формат для отображения на карте
   const existingDisplayPoints: Point[] = existingPointsOnFloor.map(p => ({
@@ -185,8 +209,8 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
   // Объединяем существующие точки с временными для отображения на карте
   const displayPoints: Point[] = [...existingDisplayPoints, ...tempDisplayPoints];
   
-  // Преобразование рёбер для отображения на карте
-  const displayEdges: Edge[] = tempEdges.map(e => ({
+  // Преобразование существующих рёбер из БД в формат для отображения на карте
+  const existingDisplayEdges: Edge[] = existingEdgesOnFloor.map(e => ({
     id: e.id,
     from_point_id: e.from_point_id,
     to_point_id: e.to_point_id,
@@ -195,24 +219,48 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     floor_transition: e.floor_transition,
   }));
   
-  // Получаем следующие ID для точек
-  const getNextPointId = () => {
-    const allIds = [...allPoints.map(p => p.id), ...tempPoints.map(p => p.id)];
-    const maxId = allIds.length > 0 ? Math.max(...allIds) : 0;
-    return maxId + 1;
-  };
+  // Преобразование временных рёбер в формат для отображения на карте
+  const tempDisplayEdges: Edge[] = tempEdges.map(e => ({
+    id: e.id,
+    from_point_id: e.from_point_id,
+    to_point_id: e.to_point_id,
+    distance_meters: e.distance_meters,
+    direction_text: e.direction_text,
+    floor_transition: e.floor_transition,
+  }));
   
-  // Получаем следующие ID для рёбер
-  const getNextEdgeId = () => {
-    const allIds = [...allEdges.map(e => e.id), ...tempEdges.map(e => e.id)];
-    const maxId = allIds.length > 0 ? Math.max(...allIds) : 0;
-    return maxId + 1;
-  };
+  // Объединяем существующие рёбра с временными для отображения на карте
+  const displayEdges: Edge[] = [...existingDisplayEdges, ...tempDisplayEdges];
   
   // Получение имени точки по ID
   const getPointNameById = (id: number) => {
     const point = allAvailablePoints.find(p => p.id === id);
     return point?.name || `Точка ${id}`;
+  };
+  
+  // Получение следующего ID для точки
+  const getNewPointId = (floorNum: number): number => {
+    const nextSeq = getNextPointSequence(floorNum);
+    return generatePointId(buildingId, floorNum, nextSeq);
+  };
+  
+  // Получение следующего ID для ребра
+  const getNewEdgeId = (): number => {
+    const nextSeq = getNextEdgeSequence();
+    return generateEdgeId(buildingId, nextSeq);
+  };
+  
+  // Автоматический расчёт расстояния при выборе точек
+  const handleEdgePointsSelect = (fromId: number | null, toId: number | null) => {
+    setEdgeFromPoint(fromId);
+    setEdgeToPoint(toId);
+    
+    if (fromId && toId && fromId !== toId) {
+      setIsCalculating(true);
+      const distance = calculateDistance(fromId, toId);
+      setEdgeDistance(distance);
+      setIsCalculating(false);
+    }
   };
   
   // Обработчик клика по карте для добавления точки
@@ -237,11 +285,14 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     x = Math.min(Math.max(x, 0), 100);
     y = Math.min(Math.max(y, 0), 100);
     
+    const newId = getNewPointId(selectedFloor);
+    const nextSeq = newId % 1000;
+    
     const newPoint: TempPoint = {
-      id: getNextPointId(),
+      id: newId,
       x: Math.round(x * 100) / 100,
       y: Math.round(y * 100) / 100,
-      name: `Новая точка ${tempPoints.length + 1}`,
+      name: `Точка ${nextSeq}`,
       type: 1,
       description: '',
       floor_number: selectedFloor,
@@ -272,7 +323,7 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
       return;
     }
     
-    const edgeExists = tempEdges.some(e => 
+    const edgeExists = [...existingEdgesOnFloor, ...tempEdges].some(e => 
       (e.from_point_id === edgeFromPoint && e.to_point_id === edgeToPoint) ||
       (e.from_point_id === edgeToPoint && e.to_point_id === edgeFromPoint)
     );
@@ -283,7 +334,7 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     }
     
     const newEdge: TempEdge = {
-      id: getNextEdgeId(),
+      id: getNewEdgeId(),
       from_point_id: edgeFromPoint,
       to_point_id: edgeToPoint,
       distance_meters: edgeDistance,
@@ -300,8 +351,14 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     setShowEdgeForm(false);
   };
   
-  // Удаление ребра
+  // Удаление ребра (только временного)
   const deleteEdge = (id: number) => {
+    const isExistingEdge = existingEdgesOnFloor.some(e => e.id === id);
+    if (isExistingEdge) {
+      alert('Нельзя удалить ребро из базы данных через этот редактор. Используйте SQL напрямую.');
+      return;
+    }
+    
     setTempEdges(tempEdges.filter(e => e.id !== id));
     if (selectedEdgeId === id) setSelectedEdgeId(null);
   };
@@ -384,7 +441,7 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     updatePoint();
   }, [pointName, pointType, pointDescription, selectedPointId]);
   
-  // Генерация SQL для вставки точек
+  // Генерация SQL для вставки только новых точек
   const generatePointsSQL = () => {
     if (tempPoints.length === 0) return '';
     
@@ -397,7 +454,7 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
     return `-- ТОЧКИ\nINSERT INTO points (id, building_id, floor_id, type, name, x_coord, y_coord, description, panorama_id, is_active) VALUES \n${sqlLines.join(',\n')}\nON CONFLICT (id) DO NOTHING;`;
   };
   
-  // Генерация SQL для вставки рёбер
+  // Генерация SQL для вставки только новых рёбер
   const generateEdgesSQL = () => {
     if (tempEdges.length === 0) return '';
     
@@ -518,7 +575,7 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
               className={`point-editor-tab ${activeTab === 'edges' ? 'active' : ''}`}
               onClick={() => setActiveTab('edges')}
             >
-              <Link size={14} /> Рёбра ({tempEdges.length})
+              <Link size={14} /> Рёбра ({tempEdges.length + existingEdgesOnFloor.length})
             </button>
           </div>
           
@@ -638,29 +695,65 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
             <>
               <div className="point-editor-edges-list">
                 <div className="point-editor-edges-header">
-                  <h3>Добавленные рёбра</h3>
+                  <h3>Список рёбер</h3>
                   <button onClick={() => setShowEdgeForm(!showEdgeForm)} className="point-editor-add-edge-btn">
                     <Link size={14} /> {showEdgeForm ? 'Отмена' : 'Добавить ребро'}
                   </button>
                 </div>
                 
-                {tempEdges.length === 0 ? (
+                {/* Существующие рёбра из БД */}
+                {existingEdgesOnFloor.length > 0 && (
+                  <div className="point-editor-existing-edges-section">
+                    <div className="point-editor-section-title">📌 Существующие рёбра</div>
+                    {existingEdgesOnFloor.map(edge => (
+                      <div key={edge.id} className="point-editor-edge-item existing">
+                        <div className="point-editor-edge-info">
+                          <span className="point-editor-edge-connection">
+                            {getPointNameById(edge.from_point_id)} → {getPointNameById(edge.to_point_id)}
+                          </span>
+                          <span className="point-editor-edge-distance">📏 {edge.distance_meters} м</span>
+                          {edge.direction_text && <span className="point-editor-edge-direction">🧭 {edge.direction_text}</span>}
+                          {edge.floor_transition && <span className="point-editor-edge-transition">🪜 Межэтажный</span>}
+                        </div>
+                        <div className="point-editor-edge-badge">БД</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Новые (временные) рёбра */}
+                {tempEdges.length > 0 && (
+                  <div className="point-editor-new-edges-section">
+                    <div className="point-editor-section-title">✨ Новые рёбра</div>
+                    {tempEdges.map(edge => (
+                      <div key={edge.id} className="point-editor-edge-item">
+                        <div className="point-editor-edge-info">
+                          <span className="point-editor-edge-connection">
+                            {getPointNameById(edge.from_point_id)} → {getPointNameById(edge.to_point_id)}
+                          </span>
+                          <span className="point-editor-edge-distance">📏 {edge.distance_meters} м</span>
+                          {edge.direction_text && <span className="point-editor-edge-direction">🧭 {edge.direction_text}</span>}
+                          {edge.floor_transition && <span className="point-editor-edge-transition">🪜 Межэтажный</span>}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteEdge(edge.id);
+                          }}
+                          className="point-editor-delete-btn"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {existingEdgesOnFloor.length === 0 && tempEdges.length === 0 && (
                   <div className="point-editor-empty">
                     <Link size={40} />
-                    <p>Нет добавленных рёбер</p>
+                    <p>Нет рёбер на этом этаже</p>
                   </div>
-                ) : (
-                  tempEdges.map(edge => (
-                    <div key={edge.id} className="point-editor-edge-item">
-                      <div className="point-editor-edge-info">
-                        <span className="point-editor-edge-connection">{getPointNameById(edge.from_point_id)} → {getPointNameById(edge.to_point_id)}</span>
-                        <span className="point-editor-edge-distance">📏 {edge.distance_meters} м</span>
-                        {edge.direction_text && <span className="point-editor-edge-direction">🧭 {edge.direction_text}</span>}
-                        {edge.floor_transition && <span className="point-editor-edge-transition">🪜 Межэтажный</span>}
-                      </div>
-                      <button onClick={() => deleteEdge(edge.id)} className="point-editor-delete-btn"><Trash2 size={16} /></button>
-                    </div>
-                  ))
                 )}
               </div>
               
@@ -733,7 +826,7 @@ const calculateDistance = (point1Id: number, point2Id: number): number => {
           {/* SQL вывод */}
           <div className="point-editor-sql-section">
             <div className="point-editor-sql-header">
-              <h3>SQL для вставки</h3>
+              <h3>SQL для вставки (только новые)</h3>
               <button onClick={handleCopySQL} className="point-editor-copy-btn">
                 {copied ? <Check size={16} /> : <Copy size={16} />}
                 {copied ? 'Скопировано!' : 'Копировать SQL'}

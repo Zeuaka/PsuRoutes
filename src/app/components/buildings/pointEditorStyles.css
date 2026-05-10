@@ -749,6 +749,65 @@
   font-size: 0.7rem;
   color: #16a34a;
 }
+/* Существующие рёбра */
+.point-editor-existing-edges-section,
+.point-editor-new-edges-section {
+  margin-bottom: 1rem;
+}
+
+.point-editor-edge-item.existing {
+  opacity: 0.8;
+  background: #f0fdf4;
+}
+
+.point-editor-edge-item.existing:hover {
+  opacity: 1;
+  background: #dcfce7;
+}
+
+.point-editor-edge-badge {
+  font-size: 0.6rem;
+  padding: 0.125rem 0.375rem;
+  background: #16a34a;
+  color: white;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.point-editor-edge-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+}
+
+.point-editor-edge-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.point-editor-edge-connection {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.point-editor-edge-distance,
+.point-editor-edge-direction,
+.point-editor-edge-transition {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.point-editor-edge-transition {
+  color: #f59e0b;
+}
 
 @keyframes spin {
   from { transform: rotate(0deg); }
