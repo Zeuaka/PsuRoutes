@@ -89,35 +89,35 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   };
   
   // Функция для расчёта расстояния между двумя точками по их координатам
-  const calculateDistance = (point1Id: number, point2Id: number): number => {
-    // Ищем точки среди всех доступных
-    let point1 = allAvailablePoints.find(p => p.id === point1Id);
-    let point2 = allAvailablePoints.find(p => p.id === point2Id);
-    
-    if (!point1 || !point2) return 0;
-    
-    // Получаем координаты (в процентах)
-    let x1 = point1.x_coord !== undefined ? point1.x_coord : point1.x;
-    let y1 = point1.y_coord !== undefined ? point1.y_coord : point1.y;
-    let x2 = point2.x_coord !== undefined ? point2.x_coord : point2.x;
-    let y2 = point2.y_coord !== undefined ? point2.y_coord : point2.y;
-    
-    // Переводим проценты в пиксели
-    const px1 = (x1 / 100) * planDimensions.width;
-    const py1 = (y1 / 100) * planDimensions.height;
-    const px2 = (x2 / 100) * planDimensions.width;
-    const py2 = (y2 / 100) * planDimensions.height;
-    
-    // Вычисляем евклидово расстояние в пикселях
-    const pixelDistance = Math.sqrt(Math.pow(px2 - px1, 2) + Math.pow(py2 - py1, 2));
-    
-    // Коэффициент пересчёта пикселей в метры
-    const metersPerPixel = getMetersPerPixel();
-    const meters = pixelDistance * metersPerPixel;
-    
-    // Округляем до 0.5 метров
-    return Math.round(meters * 2) / 2;
-  };
+const calculateDistance = (point1Id: number, point2Id: number): number => {
+  // Ищем точки среди всех доступных
+  let point1 = allAvailablePoints.find(p => p.id === point1Id);
+  let point2 = allAvailablePoints.find(p => p.id === point2Id);
+  
+  if (!point1 || !point2) return 0;
+  
+  // Получаем координаты (в процентах)
+  let x1 = point1.x_coord !== undefined ? point1.x_coord : point1.x;
+  let y1 = point1.y_coord !== undefined ? point1.y_coord : point1.y;
+  let x2 = point2.x_coord !== undefined ? point2.x_coord : point2.x;
+  let y2 = point2.y_coord !== undefined ? point2.y_coord : point2.y;
+  
+  // Переводим проценты в пиксели
+  const px1 = (x1 / 100) * planDimensions.width;
+  const py1 = (y1 / 100) * planDimensions.height;
+  const px2 = (x2 / 100) * planDimensions.width;
+  const py2 = (y2 / 100) * planDimensions.height;
+  
+  // Вычисляем евклидово расстояние в пикселях
+  const pixelDistance = Math.sqrt(Math.pow(px2 - px1, 2) + Math.pow(py2 - py1, 2));
+  
+  // Коэффициент пересчёта пикселей в метры
+  const metersPerPixel = getMetersPerPixel();
+  const meters = pixelDistance * metersPerPixel;
+  
+  // Округляем до 2 знаков после запятой (сантиметры)
+  return Math.round(meters * 100) / 100;
+};
   
   // Автоматический расчёт расстояния при выборе точек
   const handleEdgePointsSelect = (fromId: number | null, toId: number | null) => {
