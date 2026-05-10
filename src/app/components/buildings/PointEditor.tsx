@@ -58,7 +58,6 @@ const generatePointId = (buildingId: number, floorNumber: number, sequence: numb
 // Функция для генерации ID ребра: корпус (2 цифры) + 1 + порядковый (4 цифры)
 const generateEdgeId = (buildingId: number, sequence: number): number => {
   return buildingId * 100000 + 10000 + sequence;
->>>>>>> 1759563 (VicSergEditXчерепушка)
 };
 
 export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorProps) => {
