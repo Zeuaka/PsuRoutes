@@ -858,7 +858,134 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
+/* Стили для панорам */
+.point-editor-panoramas-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
 
+.point-editor-panoramas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.point-editor-panoramas-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.point-editor-add-panorama-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #ec4899, #be185d);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.point-editor-add-panorama-btn:hover {
+  background: linear-gradient(135deg, #db2777, #9d174d);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+.point-editor-new-panoramas-section {
+  margin-bottom: 16px;
+}
+
+.point-editor-panorama-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.point-editor-panorama-item:hover {
+  background: #fee2e2;
+  transform: translateX(2px);
+}
+
+.point-editor-panorama-info {
+  flex: 1;
+}
+
+.point-editor-panorama-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #be185d;
+  margin-bottom: 6px;
+}
+
+.point-editor-panorama-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.point-editor-panorama-details span {
+  display: block;
+}
+
+.point-editor-add-panorama-form {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.point-editor-add-panorama-form h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #374151;
+}
+
+.point-editor-save-panorama-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(135deg, #ec4899, #be185d);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
+}
+
+.point-editor-save-panorama-btn:hover {
+  background: linear-gradient(135deg, #db2777, #9d174d);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
 
 @keyframes spin {
   from { transform: rotate(0deg); }

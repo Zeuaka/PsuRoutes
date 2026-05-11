@@ -1,5 +1,5 @@
 // src/app/components/buildings/PointEditor.tsx
-import { ArrowLeft, Plus, Save, X, MapPin, Trash2, Copy, Check, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Link, Unlink, Calculator, ArrowUpDown, Info, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Save, X, MapPin, Trash2, Copy, Check, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Link, Unlink, Calculator, ArrowUpDown, Info, Eye, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect, useRef } from 'react';
 import { FloorMap } from './FloorMap';
@@ -32,6 +32,16 @@ interface TempEdge {
   floor_transition: boolean;
 }
 
+interface PanoramaData {
+  id: number;
+  point_id: number;
+  image_path: string;
+  title: string;
+  description: string;
+  yaw: number;
+  pitch: number;
+}
+
 // Конфигурация масштаба для разных корпусов
 const buildingScaleConfig: Record<number, number> = {
   1: 0.1733,
@@ -59,21 +69,28 @@ const generateEdgeId = (buildingId: number, sequence: number): number => {
   return buildingId * 100000 + 10000 + sequence;
 };
 
+// Функция для генерации ID панорамы: корпус (2 цифры) + 1 + порядковый (3 цифры)
+const generatePanoramaId = (buildingId: number, sequence: number): number => {
+  return buildingId * 100000 + 100000 + sequence;
+};
+
 export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorProps) => {
   const { floors, points: allPoints, edges: allEdges, loading } = useBuildingData(buildingId);
   
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
   const [tempPoints, setTempPoints] = useState<TempPoint[]>([]);
   const [tempEdges, setTempEdges] = useState<TempEdge[]>([]);
+  const [tempPanoramas, setTempPanoramas] = useState<PanoramaData[]>([]);
   const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<number | null>(null);
   const [pointName, setPointName] = useState('');
   const [pointType, setPointType] = useState<PointType>(1);
   const [pointDescription, setPointDescription] = useState('');
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'points' | 'edges'>('points');
+  const [activeTab, setActiveTab] = useState<'points' | 'edges' | 'panoramas'>('points');
   const [showEdgeForm, setShowEdgeForm] = useState(false);
   const [showTransitionForm, setShowTransitionForm] = useState(false);
+  const [showPanoramaForm, setShowPanoramaForm] = useState(false);
   const [edgeFromPoint, setEdgeFromPoint] = useState<number | null>(null);
   const [edgeToPoint, setEdgeToPoint] = useState<number | null>(null);
   const [edgeDistance, setEdgeDistance] = useState<number>(5);
@@ -83,6 +100,14 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   const [planDimensions, setPlanDimensions] = useState({ width: 400, height: 400 });
   const [selectedExistingPoint, setSelectedExistingPoint] = useState<Point | null>(null);
   const [showPointInfo, setShowPointInfo] = useState(false);
+  
+  // Состояния для формы панорамы
+  const [panoramaPointId, setPanoramaPointId] = useState<number | null>(null);
+  const [panoramaImagePath, setPanoramaImagePath] = useState('');
+  const [panoramaTitle, setPanoramaTitle] = useState('');
+  const [panoramaDescription, setPanoramaDescription] = useState('');
+  const [panoramaYaw, setPanoramaYaw] = useState(0);
+  const [panoramaPitch, setPanoramaPitch] = useState(0);
   
   const mapWrapperRef = useRef<HTMLDivElement>(null);
   const pointsListRef = useRef<HTMLDivElement>(null);
@@ -141,6 +166,16 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     if (allEdgesInBuilding.length === 0) return 1;
     
     const maxSequence = Math.max(...allEdgesInBuilding.map(e => e.id % 10000));
+    return maxSequence + 1;
+  };
+  
+  // Получаем следующий порядковый номер для панорамы
+  const getNextPanoramaSequence = (): number => {
+    const allPanoramas = [...tempPanoramas];
+    
+    if (allPanoramas.length === 0) return 1;
+    
+    const maxSequence = Math.max(...allPanoramas.map(p => p.id % 1000));
     return maxSequence + 1;
   };
   
@@ -257,6 +292,12 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   const getNewEdgeId = (): number => {
     const nextSeq = getNextEdgeSequence();
     return generateEdgeId(buildingId, nextSeq);
+  };
+  
+  // Получение следующего ID для панорамы
+  const getNewPanoramaId = (): number => {
+    const nextSeq = getNextPanoramaSequence();
+    return generatePanoramaId(buildingId, nextSeq);
   };
   
   // Автоматический расчёт расстояния при выборе точек
@@ -442,6 +483,59 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     alert(`✅ Переход создан!\n${fromPoint.name} (${fromPoint.floor_id} этаж) → ${toPoint.name} (${toPoint.floor_id} этаж)`);
   };
   
+  // Добавление панорамы
+  const addPanorama = () => {
+    if (!panoramaPointId) {
+      alert('Выберите точку для панорамы');
+      return;
+    }
+    
+    if (!panoramaImagePath) {
+      alert('Введите путь к изображению панорамы');
+      return;
+    }
+    
+    if (!panoramaTitle) {
+      alert('Введите название панорамы');
+      return;
+    }
+    
+    // Проверяем, существует ли уже панорама для этой точки
+    const panoramaExists = tempPanoramas.some(p => p.point_id === panoramaPointId);
+    if (panoramaExists) {
+      alert('Для этой точки уже добавлена панорама в текущей сессии');
+      return;
+    }
+    
+    const newPanorama: PanoramaData = {
+      id: getNewPanoramaId(),
+      point_id: panoramaPointId,
+      image_path: panoramaImagePath,
+      title: panoramaTitle,
+      description: panoramaDescription,
+      yaw: panoramaYaw,
+      pitch: panoramaPitch,
+    };
+    
+    setTempPanoramas([...tempPanoramas, newPanorama]);
+    
+    // Сбрасываем форму
+    setPanoramaPointId(null);
+    setPanoramaImagePath('');
+    setPanoramaTitle('');
+    setPanoramaDescription('');
+    setPanoramaYaw(0);
+    setPanoramaPitch(0);
+    setShowPanoramaForm(false);
+    
+    alert(`✅ Панорама "${panoramaTitle}" добавлена для точки ${getPointNameById(panoramaPointId)}`);
+  };
+  
+  // Удаление панорамы
+  const deletePanorama = (id: number) => {
+    setTempPanoramas(tempPanoramas.filter(p => p.id !== id));
+  };
+  
   // Удаление ребра (только временного)
   const deleteEdge = (id: number) => {
     const isExistingEdge = existingEdgesOnFloor.some(e => e.id === id);
@@ -557,8 +651,22 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     return `\n\n-- РЁБРА\nINSERT INTO edges (id, from_point_id, to_point_id, distance_meters, direction_text, floor_transition) VALUES \n${sqlLines.join(',\n')}\nON CONFLICT (id) DO NOTHING;`;
   };
   
+  // Генерация SQL для вставки панорам
+  const generatePanoramasSQL = () => {
+    if (tempPanoramas.length === 0) return '';
+    
+    const sqlLines = tempPanoramas.map(panorama => {
+      const titleEscaped = panorama.title.replace(/'/g, "''");
+      const descEscaped = panorama.description.replace(/'/g, "''");
+      const pathEscaped = panorama.image_path.replace(/'/g, "''");
+      return `(${panorama.id}, ${panorama.point_id}, '${pathEscaped}', '${titleEscaped}', '${descEscaped}', ${panorama.yaw}, ${panorama.pitch})`;
+    });
+    
+    return `\n\n-- ПАНОРАМЫ\nINSERT INTO panoramas (id, point_id, image_path, title, description, yaw, pitch) VALUES \n${sqlLines.join(',\n')}\nON CONFLICT (id) DO NOTHING;\n\n-- ОБНОВЛЕНИЕ ТОЧЕК (установка panorama_id)\n${tempPanoramas.map(panorama => `UPDATE points SET panorama_id = ${panorama.id} WHERE id = ${panorama.point_id};`).join('\n')}`;
+  };
+  
   const generateSQL = () => {
-    return generatePointsSQL() + generateEdgesSQL();
+    return generatePointsSQL() + generateEdgesSQL() + generatePanoramasSQL();
   };
   
   const handleCopySQL = () => {
@@ -584,6 +692,17 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     };
     return types[type] || 'Неизвестный тип';
   };
+  
+  // Все точки для выбора панорамы (существующие + временные)
+  const allPointsForPanorama = [...allExistingPointsInBuilding, ...tempPoints.map(p => ({
+    ...p,
+    floor_id: floorId,
+    building_id: buildingId,
+    is_active: true,
+    panorama_id: null,
+    x_coord: p.x,
+    y_coord: p.y,
+  }))];
   
   if (loading) {
     return (
@@ -682,6 +801,12 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
               onClick={() => setActiveTab('edges')}
             >
               <Link size={14} /> Рёбра ({tempEdges.length + existingEdgesOnFloor.length})
+            </button>
+            <button 
+              className={`point-editor-tab ${activeTab === 'panoramas' ? 'active' : ''}`}
+              onClick={() => setActiveTab('panoramas')}
+            >
+              <Camera size={14} /> Панорамы ({tempPanoramas.length})
             </button>
           </div>
           
@@ -1091,6 +1216,141 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
             </>
           )}
           
+          {/* Вкладка Панорамы */}
+          {activeTab === 'panoramas' && (
+            <>
+              <div className="point-editor-panoramas-list">
+                <div className="point-editor-panoramas-header">
+                  <h3>Панорамы</h3>
+                  <button onClick={() => setShowPanoramaForm(!showPanoramaForm)} className="point-editor-add-panorama-btn">
+                    <Camera size={14} /> {showPanoramaForm ? 'Отмена' : 'Добавить панораму'}
+                  </button>
+                </div>
+                
+                {/* Временные панорамы */}
+                {tempPanoramas.length > 0 && (
+                  <div className="point-editor-new-panoramas-section">
+                    <div className="point-editor-section-title">✨ Новые панорамы</div>
+                    {tempPanoramas.map(panorama => (
+                      <div key={panorama.id} className="point-editor-panorama-item">
+                        <div className="point-editor-panorama-info">
+                          <div className="point-editor-panorama-title">
+                            <Camera size={14} />
+                            <span>{panorama.title}</span>
+                          </div>
+                          <div className="point-editor-panorama-details">
+                            <span>Точка: {getPointNameById(panorama.point_id)}</span>
+                            <span>Путь: {panorama.image_path}</span>
+                            {panorama.description && <span>{panorama.description}</span>}
+                          </div>
+                        </div>
+                        <button onClick={() => deletePanorama(panorama.id)} className="point-editor-delete-btn">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {tempPanoramas.length === 0 && (
+                  <div className="point-editor-empty">
+                    <Camera size={40} />
+                    <p>Нет добавленных панорам</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Форма добавления панорамы */}
+              {showPanoramaForm && (
+                <div className="point-editor-add-panorama-form">
+                  <h3>Добавить панораму</h3>
+                  <div className="point-editor-form-group">
+                    <label>Точка</label>
+                    <select 
+                      value={panoramaPointId || ''} 
+                      onChange={(e) => setPanoramaPointId(Number(e.target.value))}
+                      className="point-editor-select"
+                    >
+                      <option value="">Выберите точку</option>
+                      {allPointsForPanorama.map(point => {
+                        const pointFloor = floors.find(f => f.id === point.floor_id);
+                        const isTemp = tempPoints.some(tp => tp.id === point.id);
+                        return (
+                          <option key={point.id} value={point.id}>
+                            {point.name} (ID: {point.id}) - {pointFloor?.floor_number || '?'} этаж {isTemp ? '[ВРЕМЕННАЯ]' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div className="point-editor-form-group">
+                    <label>Путь к изображению</label>
+                    <input 
+                      type="text" 
+                      value={panoramaImagePath} 
+                      onChange={(e) => setPanoramaImagePath(e.target.value)} 
+                      className="point-editor-input" 
+                      placeholder="/panoramas/example.jpg"
+                    />
+                    <div className="auto-calc-hint text-blue-500">
+                      <Camera size={12} />
+                      <span>Пример: /panoramas/corpus2_hall.jpg</span>
+                    </div>
+                  </div>
+                  <div className="point-editor-form-group">
+                    <label>Название панорамы</label>
+                    <input 
+                      type="text" 
+                      value={panoramaTitle} 
+                      onChange={(e) => setPanoramaTitle(e.target.value)} 
+                      className="point-editor-input" 
+                      placeholder="Холл ИКНТ"
+                    />
+                  </div>
+                  <div className="point-editor-form-group">
+                    <label>Описание</label>
+                    <textarea 
+                      value={panoramaDescription} 
+                      onChange={(e) => setPanoramaDescription(e.target.value)} 
+                      className="point-editor-textarea" 
+                      rows={2}
+                      placeholder="Главный холл корпуса"
+                    />
+                  </div>
+                  <div className="point-editor-form-group">
+                    <label>Начальный угол обзора (yaw)</label>
+                    <input 
+                      type="number" 
+                      value={panoramaYaw} 
+                      onChange={(e) => setPanoramaYaw(Number(e.target.value))} 
+                      className="point-editor-input" 
+                      step="5"
+                    />
+                    <div className="auto-calc-hint text-gray-500">
+                      <span>0-360 градусов</span>
+                    </div>
+                  </div>
+                  <div className="point-editor-form-group">
+                    <label>Начальный наклон (pitch)</label>
+                    <input 
+                      type="number" 
+                      value={panoramaPitch} 
+                      onChange={(e) => setPanoramaPitch(Number(e.target.value))} 
+                      className="point-editor-input" 
+                      step="5"
+                    />
+                    <div className="auto-calc-hint text-gray-500">
+                      <span>-90 до 90 градусов (0 - по горизонтали)</span>
+                    </div>
+                  </div>
+                  <button onClick={addPanorama} className="point-editor-save-panorama-btn">
+                    <Camera size={16} /> Добавить панораму
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+          
           {/* SQL вывод */}
           <div className="point-editor-sql-section">
             <div className="point-editor-sql-header">
@@ -1100,7 +1360,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 {copied ? 'Скопировано!' : 'Копировать SQL'}
               </button>
             </div>
-            <pre className="point-editor-sql-code">{generateSQL() || '-- Добавьте точки и рёбра'}</pre>
+            <pre className="point-editor-sql-code">{generateSQL() || '-- Добавьте точки, рёбра или панорамы'}</pre>
           </div>
         </div>
       </div>
