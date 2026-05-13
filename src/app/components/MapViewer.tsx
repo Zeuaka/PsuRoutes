@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from './ui/card';
 import mapImage from "./campus-map.svg";
 import { ClickableBuilding } from './buildings/ClickableBuilding';
-import { PlusCircle, ChevronDown, X } from 'lucide-react';
+import { PlusCircle, ChevronDown, X, LogIn, LogOut, Shield } from 'lucide-react';
 
 // Импорты компонентов
 import { BuildingMarker } from './buildings/BuildingMarker';
@@ -13,6 +13,8 @@ import { LocationList } from './controls/LocationList';
 import { BuildingDetails } from './buildings/BuildingDetails';
 import { CampusSearch } from './buildings/CampusSearch';
 import { PointEditor } from './buildings/PointEditor';
+import { LoginModal } from './auth/LoginModal';
+import { useAuth } from '../hooks/useAuth';
 
 // Тип для локации
 interface Location {
@@ -170,8 +172,12 @@ export function MapViewer() {
   const [showPointEditor, setShowPointEditor] = useState(false);
   const [editorBuilding, setEditorBuilding] = useState<{ id: number; name: string } | null>(null);
   const [showBuildingSelector, setShowBuildingSelector] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  
+  // Используем хук аутентификации
+  const { user, login, logout, isAdmin } = useAuth();
 
   // Получаем размеры картинки после загрузки
   useEffect(() => {
@@ -289,48 +295,91 @@ export function MapViewer() {
         onBuildingSelect={handleBuildingSearchSelect}
       />
       
-      {/* Кнопка для выбора корпуса и добавления точек */}
+      {/* Кнопка аутентификации и добавления точек */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
-        {/* Кнопка-триггер */}
-        <button
-          onClick={() => setShowBuildingSelector(!showBuildingSelector)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
-        >
-          <PlusCircle size={20} />
-          Добавить точки
-          <ChevronDown size={16} className={`transition-transform ${showBuildingSelector ? 'rotate-180' : ''}`} />
-        </button>
-        
-        {/* Выпадающий список корпусов */}
-        {showBuildingSelector && (
-          <div className="bg-white rounded-lg shadow-xl overflow-hidden w-64 animate-in slide-in-from-bottom-2">
-            <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700">Выберите корпус</span>
+        {!user ? (
+          // Неавторизованный пользователь - только кнопка входа
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <LogIn size={18} />
+            Войти
+          </button>
+        ) : (
+          // Авторизованный пользователь
+          <>
+            {/* Информация о пользователе */}
+            <div className="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-3 text-sm">
+              <span className="text-gray-700">{user.username}</span>
+              {isAdmin && (
+                <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1">
+                  <Shield size={12} />
+                  Админ
+                </span>
+              )}
               <button
-                onClick={() => setShowBuildingSelector(false)}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={logout}
+                className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
               >
-                <X size={16} />
+                <LogOut size={14} />
+                Выйти
               </button>
             </div>
-            <div className="max-h-96 overflow-y-auto">
-              {locations.map((location) => (
+            
+            {/* Кнопка добавления точек - видна только админу */}
+            {isAdmin && (
+              <>
                 <button
-                  key={location.id}
-                  onClick={() => handleOpenPointEditor(parseInt(location.id), location.name)}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-0"
+                  onClick={() => setShowBuildingSelector(!showBuildingSelector)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
                 >
-                  <div>
-                    <div className="font-medium text-gray-800">{location.name}</div>
-                    <div className="text-xs text-gray-500">{location.category}</div>
-                  </div>
-                  <PlusCircle size={16} className="text-purple-500 opacity-50" />
+                  <PlusCircle size={20} />
+                  Добавить точки
+                  <ChevronDown size={16} className={`transition-transform ${showBuildingSelector ? 'rotate-180' : ''}`} />
                 </button>
-              ))}
-            </div>
-          </div>
+                
+                {/* Выпадающий список корпусов */}
+                {showBuildingSelector && (
+                  <div className="bg-white rounded-lg shadow-xl overflow-hidden w-64 animate-in slide-in-from-bottom-2">
+                    <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700">Выберите корпус</span>
+                      <button
+                        onClick={() => setShowBuildingSelector(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {locations.map((location) => (
+                        <button
+                          key={location.id}
+                          onClick={() => handleOpenPointEditor(parseInt(location.id), location.name)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-0"
+                        >
+                          <div>
+                            <div className="font-medium text-gray-800">{location.name}</div>
+                            <div className="text-xs text-gray-500">{location.category}</div>
+                          </div>
+                          <PlusCircle size={16} className="text-purple-500 opacity-50" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
+
+      {/* Модальное окно входа */}
+      <LoginModal 
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={login}
+      />
 
       <div
         ref={containerRef}
