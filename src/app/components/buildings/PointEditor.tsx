@@ -109,6 +109,10 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   const [panoramaYaw, setPanoramaYaw] = useState(0);
   const [panoramaPitch, setPanoramaPitch] = useState(0);
   
+  // Состояние для всех точек переходов из всех корпусов
+  const [allTransitionPoints, setAllTransitionPoints] = useState<Point[]>([]);
+  const [loadingTransitions, setLoadingTransitions] = useState(false);
+  
   const mapWrapperRef = useRef<HTMLDivElement>(null);
   const pointsListRef = useRef<HTMLDivElement>(null);
   
@@ -127,6 +131,30 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
       img.src = floorPlanUrl;
     }
   }, [floorPlanUrl, selectedFloor]);
+  
+  // Загружаем все точки переходов из всех корпусов
+  useEffect(() => {
+    const fetchAllTransitionPoints = async () => {
+      setLoadingTransitions(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/all-points');
+        const allPointsData = await response.json();
+        
+        // Фильтруем только точки типа 6 (лестница) и 7 (переход между корпусами)
+        const transitions = allPointsData.filter((p: Point) => 
+          p.type === 6 || p.type === 7
+        );
+        setAllTransitionPoints(transitions);
+        console.log(`Загружено ${transitions.length} точек переходов из всех корпусов`);
+      } catch (error) {
+        console.error('Ошибка загрузки точек переходов:', error);
+      } finally {
+        setLoadingTransitions(false);
+      }
+    };
+    
+    fetchAllTransitionPoints();
+  }, []);
   
   // Получаем коэффициент пересчёта для текущего корпуса
   const getMetersPerPixel = (): number => {
@@ -176,17 +204,13 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   
   // Получаем следующий порядковый номер для панорамы (с учётом существующих)
   const getNextPanoramaSequence = (): number => {
-    // Собираем все ID существующих панорам из БД
     const existingIds = existingPanoramaIds;
-    // Собираем все ID временных панорам
     const tempIds = tempPanoramas.map(p => p.id);
-    
     const allIds = [...existingIds, ...tempIds];
     
     if (allIds.length === 0) return 1;
     
     const maxId = Math.max(...allIds);
-    // Извлекаем порядковый номер из ID (последние 4 цифры)
     const maxSequence = maxId % 10000;
     return maxSequence + 1;
   };
@@ -204,11 +228,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   
   // Все существующие точки из БД во всём здании (не временные)
   const allExistingPointsInBuilding = allPoints.filter(p => p.building_id === buildingId);
-  
-  // Точки-переходы (тип 6 - лестница, тип 7 - переход между корпусами)
-  const transitionPoints = allExistingPointsInBuilding.filter(p => 
-    p.type === 6 || p.type === 7
-  );
   
   // Функция для расчёта расстояния между двумя точками
   const calculateDistance = (point1Id: number, point2Id: number): number => {
@@ -294,6 +313,14 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     return point?.name || `Точка ${id}`;
   };
   
+  // Получение названия точки перехода по ID (из всех корпусов)
+  const getTransitionPointNameById = (id: number) => {
+    const point = allTransitionPoints.find(p => p.id === id);
+    if (!point) return `Точка ${id}`;
+    const buildingInfo = point.building_id === buildingId ? '' : ` (корпус ${point.building_id})`;
+    return `${point.name}${buildingInfo}`;
+  };
+  
   // Получение следующего ID для точки
   const getNewPointId = (floorNum: number): number => {
     const nextSeq = getNextPointSequence(floorNum);
@@ -377,16 +404,13 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   
   // Обработчик выбора точки на карте (для просмотра информации)
   const handlePointSelectOnMap = (pointId: number) => {
-    // Проверяем, существует ли точка в БД (не временная)
     const existingPoint = allPoints.find(p => p.id === pointId);
     
     if (existingPoint) {
-      // Если это существующая точка, показываем информацию
       setSelectedExistingPoint(existingPoint);
       setShowPointInfo(true);
-      setSelectedPointId(null); // Снимаем выделение с временной точки
+      setSelectedPointId(null);
     } else {
-      // Если это временная точка, переключаемся на режим редактирования
       const tempPoint = tempPoints.find(p => p.id === pointId);
       if (tempPoint) {
         setSelectedPointId(tempPoint.id);
@@ -439,7 +463,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     setShowEdgeForm(false);
   };
   
-  // Добавление перехода (межэтажная связь)
+  // Добавление перехода (межэтажная связь) - теперь между любыми корпусами
   const addTransition = () => {
     if (!edgeFromPoint || !edgeToPoint) {
       alert('Выберите начальную и конечную точки перехода');
@@ -452,11 +476,12 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     }
     
     // Проверяем, что обе точки являются точками перехода (тип 6 или 7)
-    const fromPoint = allExistingPointsInBuilding.find(p => p.id === edgeFromPoint);
-    const toPoint = allExistingPointsInBuilding.find(p => p.id === edgeToPoint);
+    // Используем allTransitionPoints для поиска, так как там точки из всех корпусов
+    const fromPoint = allTransitionPoints.find(p => p.id === edgeFromPoint);
+    const toPoint = allTransitionPoints.find(p => p.id === edgeToPoint);
     
     if (!fromPoint || !toPoint) {
-      alert('Одна из точек не найдена в базе данных');
+      alert('Одна из точек не найдена в базе данных переходов');
       return;
     }
     
@@ -465,7 +490,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
       return;
     }
     
-    // Проверяем существование перехода
+    // Проверяем существование перехода (во всех рёбрах, не только текущего этажа)
     const transitionExists = [...allEdges, ...tempEdges].some(e => 
       (e.from_point_id === edgeFromPoint && e.to_point_id === edgeToPoint) ||
       (e.from_point_id === edgeToPoint && e.to_point_id === edgeFromPoint)
@@ -482,7 +507,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
       to_point_id: edgeToPoint,
       distance_meters: edgeDistance,
       direction_text: edgeDirection,
-      floor_transition: true, // Всегда true для переходов
+      floor_transition: true,
     };
     
     setTempEdges([...tempEdges, newTransition]);
@@ -492,7 +517,13 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     setEdgeDirection('');
     setShowTransitionForm(false);
     
-    alert(`✅ Переход создан!\n${fromPoint.name} (${fromPoint.floor_id} этаж) → ${toPoint.name} (${toPoint.floor_id} этаж)`);
+    // Получаем названия корпусов для информативного сообщения
+    const fromBuildingId = fromPoint.building_id;
+    const toBuildingId = toPoint.building_id;
+    const fromBuildingName = fromBuildingId === buildingId ? 'текущий корпус' : `корпус ${fromBuildingId}`;
+    const toBuildingName = toBuildingId === buildingId ? 'текущий корпус' : `корпус ${toBuildingId}`;
+    
+    alert(`✅ Переход создан!\n${fromPoint.name} (${fromBuildingName}, этаж ${fromPoint.floor_id}) → ${toPoint.name} (${toBuildingName}, этаж ${toPoint.floor_id})`);
   };
   
   // Добавление панорамы
@@ -512,14 +543,12 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
       return;
     }
     
-    // Проверяем, существует ли уже панорама для этой точки в БД
     const existingPanoramaForPoint = allPoints.some(p => p.id === panoramaPointId && p.panorama_id !== null);
     if (existingPanoramaForPoint) {
       alert('Для этой точки уже существует панорама в базе данных');
       return;
     }
     
-    // Проверяем, существует ли уже панорама для этой точки в текущей сессии
     const panoramaExists = tempPanoramas.some(p => p.point_id === panoramaPointId);
     if (panoramaExists) {
       alert('Для этой точки уже добавлена панорама в текущей сессии');
@@ -538,7 +567,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     
     setTempPanoramas([...tempPanoramas, newPanorama]);
     
-    // Сбрасываем форму
     setPanoramaPointId(null);
     setPanoramaImagePath('');
     setPanoramaTitle('');
@@ -759,7 +787,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
         <div className="point-editor-map-area">
           <Card className="point-editor-card">
             <div className="point-editor-card-inner">
-              {/* Переключатель этажей */}
               <div className="point-editor-floor-tabs">
                 {floors.map(floor => (
                   <button
@@ -776,7 +803,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 ))}
               </div>
               
-              {/* Карта с возможностью клика */}
               <div 
                 className="point-editor-clickable-map"
                 ref={mapWrapperRef}
@@ -807,7 +833,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
         
         {/* Правая колонка */}
         <div className="point-editor-sidebar">
-          {/* Вкладки */}
           <div className="point-editor-tabs">
             <button 
               className={`point-editor-tab ${activeTab === 'points' ? 'active' : ''}`}
@@ -888,7 +913,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
           {activeTab === 'points' && (
             <>
               <div className="point-editor-points-list-scrollable" ref={pointsListRef}>
-                {/* Новые точки */}
                 {tempPoints.length > 0 && (
                   <div className="point-editor-new-section">
                     <div className="point-editor-section-title">✨ Новые точки</div>
@@ -920,7 +944,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   </div>
                 )}
                 
-                {/* Существующие точки */}
                 {existingPointsOnFloor.length > 0 && (
                   <div className="point-editor-existing-section">
                     <div className="point-editor-section-title">📌 Существующие точки</div>
@@ -957,7 +980,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 )}
               </div>
               
-              {/* Форма редактирования точки */}
               {selectedPointId && selectedPoint && (
                 <div className="point-editor-edit-form">
                   <h3>Редактирование точки</h3>
@@ -1025,7 +1047,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   </div>
                 </div>
                 
-                {/* Существующие рёбра из БД */}
                 {existingEdgesOnFloor.length > 0 && (
                   <div className="point-editor-existing-edges-section">
                     <div className="point-editor-section-title">📌 Существующие рёбра</div>
@@ -1045,7 +1066,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   </div>
                 )}
                 
-                {/* Новые (временные) рёбра */}
                 {tempEdges.length > 0 && (
                   <div className="point-editor-new-edges-section">
                     <div className="point-editor-section-title">✨ Новые рёбра</div>
@@ -1160,10 +1180,10 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 </div>
               )}
               
-              {/* Форма добавления перехода (межэтажная связь) */}
+              {/* Форма добавления перехода (межэтажная связь) - ОБНОВЛЕНА */}
               {showTransitionForm && (
                 <div className="point-editor-add-edge-form">
-                  <h3>Создать переход <span className="text-sm text-blue-500">(между этажами)</span></h3>
+                  <h3>Создать переход <span className="text-sm text-blue-500">(между этажами/корпусами)</span></h3>
                   <div className="point-editor-form-group">
                     <label>Откуда (лестница/переход)</label>
                     <select 
@@ -1172,15 +1192,22 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                       className="point-editor-select"
                     >
                       <option value="">Выберите точку перехода</option>
-                      {transitionPoints.map(point => {
-                        const pointFloor = floors.find(f => f.id === point.floor_id);
-                        return (
-                          <option key={point.id} value={point.id}>
-                            {point.name} (ID: {point.id}) - {pointFloor?.floor_number || '?'} этаж - Тип: {point.type === 6 ? 'Лестница' : 'Переход'}
-                          </option>
-                        );
-                      })}
+                      {loadingTransitions ? (
+                        <option disabled>Загрузка...</option>
+                      ) : (
+                        allTransitionPoints.map(point => {
+                          const pointFloor = floors.find(f => f.id === point.floor_id);
+                          const isCurrentBuilding = point.building_id === buildingId;
+                          return (
+                            <option key={point.id} value={point.id}>
+                              {point.name} (ID: {point.id}) - {isCurrentBuilding ? '' : `Корпус ${point.building_id}, `}этаж {pointFloor?.floor_number || '?'} - Тип: {point.type === 6 ? 'Лестница' : 'Переход'}
+                              {!isCurrentBuilding && ' 🔄'}
+                            </option>
+                          );
+                        })
+                      )}
                     </select>
+                    {loadingTransitions && <div className="auto-calc-hint">Загрузка точек из всех корпусов...</div>}
                   </div>
                   <div className="point-editor-form-group">
                     <label>Куда (лестница/переход)</label>
@@ -1190,14 +1217,20 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                       className="point-editor-select"
                     >
                       <option value="">Выберите точку перехода</option>
-                      {transitionPoints.map(point => {
-                        const pointFloor = floors.find(f => f.id === point.floor_id);
-                        return (
-                          <option key={point.id} value={point.id}>
-                            {point.name} (ID: {point.id}) - {pointFloor?.floor_number || '?'} этаж - Тип: {point.type === 6 ? 'Лестница' : 'Переход'}
-                          </option>
-                        );
-                      })}
+                      {loadingTransitions ? (
+                        <option disabled>Загрузка...</option>
+                      ) : (
+                        allTransitionPoints.map(point => {
+                          const pointFloor = floors.find(f => f.id === point.floor_id);
+                          const isCurrentBuilding = point.building_id === buildingId;
+                          return (
+                            <option key={point.id} value={point.id}>
+                              {point.name} (ID: {point.id}) - {isCurrentBuilding ? '' : `Корпус ${point.building_id}, `}этаж {pointFloor?.floor_number || '?'} - Тип: {point.type === 6 ? 'Лестница' : 'Переход'}
+                              {!isCurrentBuilding && ' 🔄'}
+                            </option>
+                          );
+                        })
+                      )}
                     </select>
                   </div>
                   <div className="point-editor-form-group">
@@ -1224,7 +1257,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                       value={edgeDirection} 
                       onChange={(e) => setEdgeDirection(e.target.value)} 
                       className="point-editor-input" 
-                      placeholder="Например: Подняться на 3 этаж по лестнице" 
+                      placeholder="Например: Перейти в соседний корпус по переходу" 
                     />
                   </div>
                   <button onClick={addTransition} className="point-editor-save-transition-btn">
@@ -1246,7 +1279,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   </button>
                 </div>
                 
-                {/* Временные панорамы */}
                 {tempPanoramas.length > 0 && (
                   <div className="point-editor-new-panoramas-section">
                     <div className="point-editor-section-title">✨ Новые панорамы</div>
@@ -1279,7 +1311,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 )}
               </div>
               
-              {/* Форма добавления панорамы */}
               {showPanoramaForm && (
                 <div className="point-editor-add-panorama-form">
                   <h3>Добавить панораму</h3>
