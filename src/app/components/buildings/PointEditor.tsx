@@ -69,9 +69,9 @@ const generateEdgeId = (buildingId: number, sequence: number): number => {
   return buildingId * 100000 + 10000 + sequence;
 };
 
-// Функция для генерации ID панорамы: корпус (2 цифры) + 1 + порядковый (3 цифры)
+// Функция для генерации ID панорамы: корпус (2 цифры) + 99 + порядковый (4 цифры)
 const generatePanoramaId = (buildingId: number, sequence: number): number => {
-  return buildingId * 100000 + 100000 + sequence;
+  return buildingId * 1000000 + 990000 + sequence;
 };
 
 export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorProps) => {
@@ -143,6 +143,11 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     return fromPoint?.floor_id === floorId && toPoint?.floor_id === floorId;
   });
   
+  // Получаем существующие ID панорам из точек БД
+  const existingPanoramaIds = allPoints
+    .filter(p => p.panorama_id !== null && p.building_id === buildingId)
+    .map(p => p.panorama_id || 0);
+  
   // Получаем следующий порядковый номер для точки
   const getNextPointSequence = (floorNum: number): number => {
     const allPointsInFloor = [
@@ -169,13 +174,20 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     return maxSequence + 1;
   };
   
-  // Получаем следующий порядковый номер для панорамы
+  // Получаем следующий порядковый номер для панорамы (с учётом существующих)
   const getNextPanoramaSequence = (): number => {
-    const allPanoramas = [...tempPanoramas];
+    // Собираем все ID существующих панорам из БД
+    const existingIds = existingPanoramaIds;
+    // Собираем все ID временных панорам
+    const tempIds = tempPanoramas.map(p => p.id);
     
-    if (allPanoramas.length === 0) return 1;
+    const allIds = [...existingIds, ...tempIds];
     
-    const maxSequence = Math.max(...allPanoramas.map(p => p.id % 1000));
+    if (allIds.length === 0) return 1;
+    
+    const maxId = Math.max(...allIds);
+    // Извлекаем порядковый номер из ID (последние 4 цифры)
+    const maxSequence = maxId % 10000;
     return maxSequence + 1;
   };
   
@@ -500,7 +512,14 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
       return;
     }
     
-    // Проверяем, существует ли уже панорама для этой точки
+    // Проверяем, существует ли уже панорама для этой точки в БД
+    const existingPanoramaForPoint = allPoints.some(p => p.id === panoramaPointId && p.panorama_id !== null);
+    if (existingPanoramaForPoint) {
+      alert('Для этой точки уже существует панорама в базе данных');
+      return;
+    }
+    
+    // Проверяем, существует ли уже панорама для этой точки в текущей сессии
     const panoramaExists = tempPanoramas.some(p => p.point_id === panoramaPointId);
     if (panoramaExists) {
       alert('Для этой точки уже добавлена панорама в текущей сессии');
@@ -1274,10 +1293,13 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                       <option value="">Выберите точку</option>
                       {allPointsForPanorama.map(point => {
                         const pointFloor = floors.find(f => f.id === point.floor_id);
+                        const hasExistingPanorama = allPoints.some(p => p.id === point.id && p.panorama_id !== null);
                         const isTemp = tempPoints.some(tp => tp.id === point.id);
                         return (
-                          <option key={point.id} value={point.id}>
-                            {point.name} (ID: {point.id}) - {pointFloor?.floor_number || '?'} этаж {isTemp ? '[ВРЕМЕННАЯ]' : ''}
+                          <option key={point.id} value={point.id} disabled={hasExistingPanorama}>
+                            {point.name} (ID: {point.id}) - {pointFloor?.floor_number || '?'} этаж 
+                            {hasExistingPanorama ? ' [ЕСТЬ ПАНОРАМА]' : ''}
+                            {isTemp ? ' [ВРЕМЕННАЯ]' : ''}
                           </option>
                         );
                       })}

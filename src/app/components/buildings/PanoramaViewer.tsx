@@ -13,22 +13,12 @@ interface PanoramaViewerProps {
 
 declare const pannellum: any;
 
+// Хардкод маппинг только для точки 10
 const panoramaMap: Record<number, { image: string; title: string; yaw?: number; pitch?: number }> = {
-  100: {
-    image: '/panoramas/corpus2_hall.jpg',
-    title: 'Холл ИКНТ',
-    yaw: 0,
-    pitch: 0,
-  },
-  110: {
-    image: '/panoramas/corpus2_cafe.jpg',
-    title: 'Столовая',
-    yaw: 0,
-    pitch: 0,
-  },
-  122: {
-    image: '/panoramas/corpus2_lab.jpg',
-    title: 'Лаборатория биологии',
+  // Корпус 1 - точка 10 на 1 этаже
+  101001: {
+    image: '/panoramas/1.1.10.jpg',
+    title: 'Коридор к лестнице 5',
     yaw: 0,
     pitch: 0,
   },
@@ -46,11 +36,12 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
     if (pointId && panoramaMap[pointId]) {
       return panoramaMap[pointId];
     }
-    const firstKey = Object.keys(panoramaMap)[0];
-    if (firstKey) {
-      return panoramaMap[Number(firstKey)];
-    }
-    return null;
+    return {
+      image: '/panoramas/1.1.10.jpg',
+      title: 'Панорама',
+      yaw: 0,
+      pitch: 0,
+    };
   };
 
   const panoramaConfig = getPanoramaConfig();
@@ -111,7 +102,7 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
           onLoad: () => setIsLoading(false),
           onError: (err: any) => {
             console.error(err);
-            setError('Не удалось загрузить панораму. Проверьте наличие файла.');
+            setError(`Не удалось загрузить панораму. Проверьте наличие файла: ${panoramaConfig.image}`);
             setIsLoading(false);
           },
         });
@@ -154,36 +145,6 @@ export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: Pa
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
-
-  if (!panoramaConfig) {
-    return (
-      <div className="panorama-viewer-container">
-        <div className="panorama-viewer-header">
-          <div className="panorama-viewer-header-content">
-            <button onClick={onBack} className="panorama-viewer-back-btn">
-              <ArrowLeft size={20} />
-            </button>
-            <div className="panorama-viewer-title">
-              <h1>{buildingName}</h1>
-              <p>360° виртуальный тур</p>
-            </div>
-          </div>
-        </div>
-        <div className="panorama-viewer-content">
-          <div className="panorama-viewer-placeholder">
-            <div className="panorama-viewer-placeholder-icon"><RefreshCcw size={40}/></div>
-            <h3 className="panorama-viewer-placeholder-title">Панорама в разработке</h3>
-            <p className="panorama-viewer-placeholder-text">
-              Для корпуса {buildingName} панорама скоро появится
-            </p>
-            <button onClick={onBack} className="panorama-viewer-placeholder-btn">
-              Вернуться
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="panorama-viewer-container">
