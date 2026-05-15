@@ -15,13 +15,71 @@ declare const pannellum: any;
 
 // Хардкод маппинг только для точки 10
 const panoramaMap: Record<number, { image: string; title: string; yaw?: number; pitch?: number }> = {
-  // Корпус 1 - точка 10 на 1 этаже
-  101001: {
-    image: '/panoramas/1.1.10.jpg',
-    title: 'Коридор к лестнице 5',
-    yaw: 0,
-    pitch: 0,
-  },
+  // ========== КОРПУС 1 ==========
+  // 1 этаж
+  101001: { image: '/panoramas/1.1.10.jpg', title: 'Коридор к лестнице 5', yaw: 0, pitch: 0 },
+  101006: { image: '/panoramas/1.1.2.jpg', title: 'Банкоматы', yaw: 0, pitch: 0 },
+  101007: { image: '/panoramas/1.1.3.jpg', title: 'Корридор', yaw: 0, pitch: 0 },
+  101002: { image: '/panoramas/1.1.л5.jpg', title: 'Лестница у буфета', yaw: 0, pitch: 0 },
+  101008: { image: '/panoramas/1.1.4.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  101009: { image: '/panoramas/1.1.л3.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  101010: { image: '/panoramas/1.1.л1.jpg', title: 'Главная лестница', yaw: 0, pitch: 0 },
+  101011: { image: '/panoramas/1.1.1.jpg', title: 'Холл 1 корпус', yaw: 0, pitch: 0 },
+  101012: { image: '/panoramas/1.1.л2.jpg', title: 'Главная лестница', yaw: 0, pitch: 0 },
+  101013: { image: '/panoramas/1.1.5.jpg', title: 'Развилка', yaw: 0, pitch: 0 },
+  101014: { image: '/panoramas/1.1.6.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  101015: { image: '/panoramas/1.1.7.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  101016: { image: '/panoramas/1.1.л4.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  101017: { image: '/panoramas/1.1.8.jpg', title: 'Вход в библиотеку', yaw: 0, pitch: 0 },
+  101018: { image: '/panoramas/1.1.9.jpg', title: 'Библиотека', yaw: 0, pitch: 0 },
+  
+  // 2 этаж
+  11312: { image: '/panoramas/1.2.3.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  102314: { image: '/panoramas/1.2.л3.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  11303: { image: '/panoramas/1.2.2.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11219: { image: '/panoramas/1.2.1.jpg', title: 'Развилка', yaw: 0, pitch: 0 },
+  11210: { image: '/panoramas/1.2.л1.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  11218: { image: '/panoramas/1.2.4.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11211: { image: '/panoramas/1.2.л2.jpg', title: 'Главная лестница', yaw: 0, pitch: 0 },
+  11283: { image: '/panoramas/1.2.5.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  11214: { image: '/panoramas/1.2.6.jpg', title: 'Рядом с переходом', yaw: 0, pitch: 0 },
+  11293: { image: '/panoramas/1.2.7.jpg', title: 'Корридор', yaw: 0, pitch: 0 },
+  11297: { image: '/panoramas/1.2.8.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11212: { image: '/panoramas/1.2.л4.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  
+  // 3 этаж
+  11338: { image: '/panoramas/1.3.3.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11316: { image: '/panoramas/1.3.л3.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  11321: { image: '/panoramas/1.3.2.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11390: { image: '/panoramas/1.3.1.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  11315: { image: '/panoramas/1.3.л1.jpg', title: 'Главная лестница', yaw: 0, pitch: 0 },
+  11395: { image: '/panoramas/1.3.4.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11314: { image: '/panoramas/1.3.л2.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  11318: { image: '/panoramas/1.3.5.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  11405: { image: '/panoramas/1.3.6.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11317: { image: '/panoramas/1.3.л4.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11323: { image: '/panoramas/1.3.7.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  
+  // 4 этаж
+  11422: { image: '/panoramas/1.4.1.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  11488: { image: '/panoramas/1.4.2.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11493: { image: '/panoramas/1.4.3.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11421: { image: '/panoramas/1.4.4.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  11420: { image: '/panoramas/1.4.5.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11419: { image: '/panoramas/1.4.6.jpg', title: 'У лестницы', yaw: 0, pitch: 0 },
+  11477: { image: '/panoramas/1.4.7.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11425: { image: '/panoramas/1.4.8.jpg', title: 'Коридор', yaw: 0, pitch: 0 },
+  11416: { image: '/panoramas/1.4.л4.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  11415: { image: '/panoramas/1.4.л2.jpg', title: 'Главная лестница', yaw: 0, pitch: 0 },
+  11417: { image: '/panoramas/1.4.л1.jpg', title: 'Главная лестница', yaw: 0, pitch: 0 },
+  11418: { image: '/panoramas/1.4.л3.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+
+  // ========== КОРПУС 10 ==========
+  1001002: { image: '/panoramas/10.1.1.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  1001004: { image: '/panoramas/10.1.2.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  1001005: { image: '/panoramas/10.1.3.jpg', title: 'Холл', yaw: 0, pitch: 0 },
+  1001003: { image: '/panoramas/10.1.л1.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
+  1001006: { image: '/panoramas/10.1.л2.jpg', title: 'Лестница', yaw: 0, pitch: 0 },
 };
 
 export const PanoramaViewer = ({ buildingId, buildingName, pointId, onBack }: PanoramaViewerProps) => {
