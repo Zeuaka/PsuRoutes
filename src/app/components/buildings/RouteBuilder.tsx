@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
 import { FloorMap } from './FloorMap';
 import { RouteViewer } from './RouteViewer';
-import { useBuildingData } from '../../hooks/useBuildingData';
-import { fetchAllPoints } from '../../data/navigationApi';
+import { fetchPointsByBuilding, fetchEdgesByBuilding, fetchFloorsByBuilding, fetchAllPoints } from '../../data/navigationApi';
 import { findShortestPath, PathResult } from '../../data/navigationUtils';
-import { Point } from '../../data/navigationData';
+import { Point, Edge, Floor } from '../../data/navigationData';
 import './routeBuilderStyles.css';
 
 interface RouteBuilderProps {
@@ -17,8 +16,12 @@ interface RouteBuilderProps {
 }
 
 export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderProps) => {
-  const { floors, points: allPoints, edges: allEdges, panoramas, loading, refreshData } = useBuildingData(buildingId);
-
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [allPoints, setAllPoints] = useState<Point[]>([]);
+  const [allEdges, setAllEdges] = useState<Edge[]>([]);
+  const [panoramas, setPanoramas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [showPanorama, setShowPanorama] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | undefined>();
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
@@ -43,11 +46,40 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [mapScale, setMapScale] = useState(1);
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
   const [isEditMode, setIsEditMode] = useState(false);
-  const [localPoints, setLocalPoints] = useState<Point[]>([]);
   
   const [allBuildingsPoints, setAllBuildingsPoints] = useState<Point[]>([]);
   const [loadingAllPoints, setLoadingAllPoints] = useState(false);
+  
+  // Множество ID корпусов, для которых загружены данные
+  const [loadedBuildings, setLoadedBuildings] = useState<Set<number>>(new Set([buildingId]));
+  // Дополнительные точки, рёбра и этажи из других корпусов
+  const [extraPoints, setExtraPoints] = useState<Point[]>([]);
+  const [extraEdges, setExtraEdges] = useState<Edge[]>([]);
+  const [extraFloors, setExtraFloors] = useState<Floor[]>([]);
 
+  // Загрузка данных текущего корпуса
+  useEffect(() => {
+    const loadBuildingData = async () => {
+      setLoading(true);
+      try {
+        const [floorsData, pointsData, edgesData] = await Promise.all([
+          fetchFloorsByBuilding(buildingId),
+          fetchPointsByBuilding(buildingId),
+          fetchEdgesByBuilding(buildingId),
+        ]);
+        setFloors(floorsData);
+        setAllPoints(pointsData);
+        setAllEdges(edgesData);
+      } catch (error) {
+        console.error('Ошибка загрузки данных корпуса:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBuildingData();
+  }, [buildingId]);
+
+  // Загрузка всех точек для поиска (без рёбер)
   useEffect(() => {
     const loadAllPoints = async () => {
       setLoadingAllPoints(true);
@@ -63,14 +95,36 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     loadAllPoints();
   }, []);
 
-  useEffect(() => {
-    setLocalPoints(allPoints);
-  }, [allPoints]);
+  // Функция загрузки данных другого корпуса (включая этажи)
+  const loadBuildingDataIfNeeded = async (targetBuildingId: number) => {
+    if (loadedBuildings.has(targetBuildingId)) return;
+    
+    console.log(`Загрузка данных корпуса ${targetBuildingId}...`);
+    try {
+      const [pointsData, edgesData, floorsData] = await Promise.all([
+        fetchPointsByBuilding(targetBuildingId),
+        fetchEdgesByBuilding(targetBuildingId),
+        fetchFloorsByBuilding(targetBuildingId),
+      ]);
+      setExtraPoints(prev => [...prev, ...pointsData]);
+      setExtraEdges(prev => [...prev, ...edgesData]);
+      setExtraFloors(prev => [...prev, ...floorsData]);
+      setLoadedBuildings(prev => new Set([...prev, targetBuildingId]));
+      console.log(`Загружено ${pointsData.length} точек, ${edgesData.length} рёбер и ${floorsData.length} этажей для корпуса ${targetBuildingId}`);
+    } catch (error) {
+      console.error(`Ошибка загрузки корпуса ${targetBuildingId}:`, error);
+    }
+  };
+
+  // Объединённые точки, рёбра и этажи (текущий корпус + дополнительные)
+  const combinedPoints = [...allPoints, ...extraPoints];
+  const combinedEdges = [...allEdges, ...extraEdges];
+  const combinedFloors = [...floors, ...extraFloors];
 
   // Функция обновления отображаемых точек
   const updateDisplayPoints = () => {
-    const currentFloorPoints = localPoints.filter(p => {
-      const pf = floors.find(f => f.id === p.floor_id);
+    const currentFloorPoints = combinedPoints.filter(p => {
+      const pf = combinedFloors.find(f => f.id === p.floor_id);
       return pf?.floor_number === selectedFloor;
     });
     
@@ -89,12 +143,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   // Обновляем при изменении зависимостей
   useEffect(() => {
     updateDisplayPoints();
-  }, [localPoints, floors, selectedFloor, isRouteMode, routePointIds]);
+  }, [combinedPoints, combinedFloors, selectedFloor, isRouteMode, routePointIds]);
 
-  const hasPanorama = panoramas.length > 0;
-  
   const searchResults = searchTarget === 'from' 
-    ? localPoints.filter(point =>
+    ? combinedPoints.filter(point =>
         (point.type === 1 || point.type === 8) &&
         (point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
          (point.description && point.description.toLowerCase().includes(searchQuery.toLowerCase())))
@@ -116,11 +168,19 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setSelectedFloor(targetFloor);
   };
 
-  const handleSearchSelect = (point: Point) => {
+  const handleSearchSelect = async (point: Point) => {
     if (searchTarget === 'from') {
       setSelectedFromPoint(point.id);
+      // Если выбранная точка из другого корпуса, подгружаем его данные
+      if (point.building_id !== buildingId) {
+        await loadBuildingDataIfNeeded(point.building_id);
+      }
     } else {
       setSelectedToPoint(point.id);
+      // Если выбранная точка из другого корпуса, подгружаем его данные
+      if (point.building_id !== buildingId) {
+        await loadBuildingDataIfNeeded(point.building_id);
+      }
     }
     setSearchQuery('');
     setShowSearchResults(false);
@@ -132,14 +192,16 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   };
 
   const handleFindPath = () => {
-    if (selectedFromPoint && selectedToPoint && localPoints.length && allEdges.length) {
-      const result = findShortestPath(localPoints, allEdges, selectedFromPoint, selectedToPoint);
+    if (selectedFromPoint && selectedToPoint && combinedPoints.length && combinedEdges.length) {
+      console.log(`Поиск пути от ${selectedFromPoint} до ${selectedToPoint}`);
+      console.log(`Всего точек: ${combinedPoints.length}, рёбер: ${combinedEdges.length}`);
+      
+      const result = findShortestPath(combinedPoints, combinedEdges, selectedFromPoint, selectedToPoint);
       if (result) {
         const pointIds = new Set(result.points.map(p => p.id));
         setRoutePointIds(pointIds);
         setIsRouteMode(true);
         setPathResult(result);
-        // Принудительно обновляем ключ для перерендера FloorMap
         setRenderKey(prev => prev + 1);
         setShowRouteViewer(true);
       } else {
@@ -165,7 +227,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   const getPointName = (pointId: number | null) => {
     if (!pointId) return null;
-    const point = localPoints.find(p => p.id === pointId);
+    const point = combinedPoints.find(p => p.id === pointId);
     return point?.name || null;
   };
 
@@ -185,7 +247,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
       const data = await response.json();
       
       if (response.ok) {
-        setLocalPoints(prev => prev.map(p => 
+        setAllPoints(prev => prev.map(p => 
           p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
         ));
       } else {
@@ -198,13 +260,13 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   const handlePointDrag = (pointId: number, x: number, y: number) => {
     if (isEditMode) {
-      setLocalPoints(prev => prev.map(p => 
+      setAllPoints(prev => prev.map(p => 
         p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
       ));
     }
   };
 
-  const currentFloor = floors.find(f => f.floor_number === selectedFloor);
+  const currentFloor = combinedFloors.find(f => f.floor_number === selectedFloor);
   const floorPlanUrl = currentFloor?.floor_plan_url;
 
   if (loading || loadingAllPoints) {
@@ -224,9 +286,9 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         buildingId={buildingId}
         buildingName={buildingName}
         path={pathResult}
-        floors={floors}
-        allPoints={localPoints}
-        allEdges={allEdges}
+        floors={combinedFloors}
+        allPoints={combinedPoints}
+        allEdges={combinedEdges}
         panoramas={panoramas}
         onBack={() => setShowRouteViewer(false)}
         onNewRoute={() => {
@@ -256,9 +318,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
           className={`edit-mode-btn ${isEditMode ? 'edit-mode-active' : 'edit-mode-inactive'}`}
         >
           {isEditMode ? '✏️ Режим редактирования' : '👁️ Режим просмотра'}
-        </button>
-        <button onClick={() => refreshData()} className="refresh-btn">
-          🔄 Обновить данные
         </button>
       </div>
 
@@ -352,7 +411,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                 onChange={(e) => setSelectedFloor(Number(e.target.value))}
                 className="floor-select-dropdown"
               >
-                {floors.map(floor => (
+                {combinedFloors.map(floor => (
                   <option key={floor.id} value={floor.floor_number}>
                     {floor.floor_number} этаж
                   </option>
@@ -378,8 +437,8 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   path={null}
                   onPointSelect={handlePointSelect}
                   onFloorTransition={handleFloorTransition}
-                  allPoints={localPoints}
-                  allEdges={allEdges}
+                  allPoints={combinedPoints}
+                  allEdges={combinedEdges}
                   scale={mapScale}
                   position={mapPosition}
                   onZoomChange={(scale, position) => {
@@ -429,7 +488,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                         🏛️ {getPointBuildingInfo(point)} • 
                       </span>
                     )}
-                    Этаж {floors.find(f => f.id === point.floor_id)?.floor_number || '?'}
+                    Этаж {combinedFloors.find(f => f.id === point.floor_id)?.floor_number || '?'}
                     {point.description && ` • ${point.description}`}
                   </div>
                 </div>

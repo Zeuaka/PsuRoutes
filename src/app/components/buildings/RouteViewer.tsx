@@ -50,27 +50,46 @@ export const RouteViewer = ({
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
   const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
   
-  const floorPlanUrl = currentFloorObj?.floor_plan_url;
+  // Получаем URL плана этажа для текущей точки
+  const getFloorPlanUrl = () => {
+    if (!currentFloorObj) return undefined;
+    // Ищем этаж по floor_id текущей точки
+    const floor = floors.find(f => f.id === currentPoint?.floor_id);
+    return floor?.floor_plan_url;
+  };
   
-  // 🔧 ИСПРАВЛЕНО: показываем только точки, которые входят в маршрут
+  const floorPlanUrl = getFloorPlanUrl();
+  
+  // Точки маршрута (все точки, которые входят в маршрут)
   const routePointIds = new Set(path.points.map(p => p.id));
   
-  const pointsOnCurrentFloor = allPoints.filter(p => {
-    const pointFloor = floors.find(f => f.id === p.floor_id);
-    // Показываем только точки маршрута на текущем этаже
-    return routePointIds.has(p.id) && 
-           pointFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
-  });
+  // Получаем все точки, которые находятся на текущем этаже И входят в маршрут
+  const getPointsOnCurrentFloor = () => {
+    const currentFloorId = currentPoint?.floor_id;
+    if (!currentFloorId) return [];
+    
+    // Фильтруем точки: только те, что на текущем этаже и в маршруте
+    return allPoints.filter(p => 
+      p.floor_id === currentFloorId && routePointIds.has(p.id)
+    );
+  };
+  
+  // Получаем рёбра, которые полностью находятся на текущем этаже и входят в маршрут
+  const getEdgesOnCurrentFloor = () => {
+    const currentFloorId = currentPoint?.floor_id;
+    if (!currentFloorId) return [];
+    
+    return path.edges.filter(edge => {
+      const fromPoint = allPoints.find(p => p.id === edge.from_point_id);
+      const toPoint = allPoints.find(p => p.id === edge.to_point_id);
+      return fromPoint?.floor_id === currentFloorId && toPoint?.floor_id === currentFloorId;
+    });
+  };
+  
+  const pointsOnCurrentFloor = getPointsOnCurrentFloor();
+  const edgesOnCurrentFloor = getEdgesOnCurrentFloor();
 
-  const edgesOnCurrentFloor = path.edges.filter(edge => {
-    const fromPoint = allPoints.find(p => p.id === edge.from_point_id);
-    const toPoint = allPoints.find(p => p.id === edge.to_point_id);
-    const fromFloor = fromPoint ? floors.find(f => f.id === fromPoint.floor_id) : null;
-    const toFloor = toPoint ? floors.find(f => f.id === toPoint.floor_id) : null;
-    return fromFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor) &&
-           toFloor?.floor_number === (currentFloorObj?.floor_number || selectedFloor);
-  });
-
+  // Обогащаем точки маршрута информацией о текущем шаге
   const enhancedPath = {
     ...path,
     points: path.points.map((point, idx) => ({
@@ -85,7 +104,9 @@ export const RouteViewer = ({
       setCurrentStep(nextStep);
       const nextPoint = path.points[nextStep];
       const nextPointFloor = floors.find(f => f.id === nextPoint.floor_id);
-      if (nextPointFloor) setSelectedFloor(nextPointFloor.floor_number);
+      if (nextPointFloor) {
+        setSelectedFloor(nextPointFloor.floor_number);
+      }
     }
   };
 
@@ -104,6 +125,7 @@ export const RouteViewer = ({
   const handleFloorTransition = (targetFloor: number, fromPointId?: number) => {
     setSelectedFloor(targetFloor);
     if (fromPointId) {
+      // Ищем следующую точку на целевом этаже
       const nextPointOnTargetFloor = allPoints.find(p => {
         if (p.floor_id !== targetFloor) return false;
         const hasConnection = allEdges.some(e => 
@@ -167,6 +189,9 @@ export const RouteViewer = ({
       />
     );
   }
+
+  // Текущий этаж для отображения
+  const displayFloorNumber = currentFloorObj?.floor_number || selectedFloor;
 
   return (
     <div className="route-viewer-container">
@@ -272,7 +297,7 @@ export const RouteViewer = ({
             <label className="floor-select-label">Выберите этаж:</label>
             <div className="floor-select-wrapper">
               <select
-                value={selectedFloor}
+                value={displayFloorNumber}
                 onChange={(e) => setSelectedFloor(Number(e.target.value))}
                 className="floor-select-dropdown"
               >
@@ -301,7 +326,7 @@ export const RouteViewer = ({
                 <FloorMap
                   points={pointsOnCurrentFloor}
                   edges={edgesOnCurrentFloor}
-                  floorNumber={currentFloorObj?.floor_number || selectedFloor}
+                  floorNumber={displayFloorNumber}
                   floorPlanUrl={floorPlanUrl}
                   selectedFromPoint={null}
                   selectedToPoint={null}
@@ -323,6 +348,47 @@ export const RouteViewer = ({
           </Card>
         </div>
       </div>
+
+      {showSearchResults && (
+        <div className="route-builder-modal-overlay" onClick={() => setShowSearchResults(false)}>
+          <div className="route-builder-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="route-builder-modal-header">
+              <h3 className="route-builder-modal-title">
+                {searchTarget === 'from' ? 'Выберите точку маршрута' : 'Выберите точку маршрута'}
+              </h3>
+              <div className="route-builder-search-container">
+                <Search size={16} className="route-builder-search-icon" />
+                <input
+                  type="text"
+                  placeholder="Поиск..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="route-builder-search-input"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="route-builder-modal-results">
+              {searchResults.slice(0, 20).map(point => (
+                <div
+                  key={point.id}
+                  className="route-builder-search-result"
+                  onClick={() => handleSearchSelect(point)}
+                >
+                  <div className="route-builder-result-name">{point.name}</div>
+                  <div className="route-builder-result-desc">
+                    Этаж {floors.find(f => f.id === point.floor_id)?.floor_number || '?'}
+                    {point.description && ` • ${point.description}`}
+                  </div>
+                </div>
+              ))}
+              {searchResults.length === 0 && searchQuery && (
+                <div className="route-builder-no-results">Ничего не найдено</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
