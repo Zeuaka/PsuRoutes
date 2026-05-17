@@ -64,9 +64,9 @@ const generatePointId = (buildingId: number, floorNumber: number, sequence: numb
   return buildingId * 100000 + floorNumber * 1000 + sequence;
 };
 
-// Функция для генерации ID ребра: корпус (2 цифры) + 1 + порядковый (4 цифры)
-const generateEdgeId = (buildingId: number, sequence: number): number => {
-  return buildingId * 100000 + 10000 + sequence;
+// Функция для генерации ID ребра: корпус (2 цифры) + этаж (2 цифры) + порядковый (4 цифры)
+const generateEdgeId = (buildingId: number, floorNumber: number, sequence: number): number => {
+  return buildingId * 1000000 + floorNumber * 10000 + sequence;
 };
 
 // Функция для генерации ID панорамы: корпус (2 цифры) + 99 + порядковый (4 цифры)
@@ -189,16 +189,25 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     return maxSequence + 1;
   };
   
-  // Получаем следующий порядковый номер для ребра
+  // Получаем следующий порядковый номер для ребра (только для текущего этажа)
   const getNextEdgeSequence = (): number => {
-    const allEdgesInBuilding = [
-      ...existingEdgesOnFloor,
-      ...tempEdges
-    ];
+    // Собираем ID существующих рёбер на текущем этаже
+    const existingEdgeIds = existingEdgesOnFloor.map(e => e.id);
+    // Собираем ID временных рёбер
+    const tempEdgeIds = tempEdges.map(e => e.id);
     
-    if (allEdgesInBuilding.length === 0) return 1;
+    const allIds = [...existingEdgeIds, ...tempEdgeIds];
     
-    const maxSequence = Math.max(...allEdgesInBuilding.map(e => e.id % 10000));
+    if (allIds.length === 0) return 1;
+    
+    // Находим максимальный порядковый номер среди рёбер текущего этажа
+    let maxSequence = 0;
+    for (const id of allIds) {
+      // Извлекаем порядковый номер (последние 4 цифры)
+      const sequence = id % 10000;
+      if (sequence > maxSequence) maxSequence = sequence;
+    }
+    
     return maxSequence + 1;
   };
   
@@ -330,7 +339,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
   // Получение следующего ID для ребра
   const getNewEdgeId = (): number => {
     const nextSeq = getNextEdgeSequence();
-    return generateEdgeId(buildingId, nextSeq);
+    return generateEdgeId(buildingId, selectedFloor, nextSeq);
   };
   
   // Получение следующего ID для панорамы
@@ -1180,7 +1189,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 </div>
               )}
               
-              {/* Форма добавления перехода (межэтажная связь) - ОБНОВЛЕНА */}
+              {/* Форма добавления перехода (межэтажная связь) */}
               {showTransitionForm && (
                 <div className="point-editor-add-edge-form">
                   <h3>Создать переход <span className="text-sm text-blue-500">(между этажами/корпусами)</span></h3>
@@ -1257,7 +1266,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                       value={edgeDirection} 
                       onChange={(e) => setEdgeDirection(e.target.value)} 
                       className="point-editor-input" 
-                      placeholder="Например: Перейти в соседний корпус по переходу" 
+                      placeholder="Например: Перейти в соседний корпус" 
                     />
                   </div>
                   <button onClick={addTransition} className="point-editor-save-transition-btn">
