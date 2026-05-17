@@ -26,6 +26,7 @@ interface FloorMapProps {
   onPointHover?: (pointId: number | null) => void;
   hideControls?: boolean;
   routePointIds?: Set<number>;
+  buildingId?: number; // ДОБАВЛЯЕМ buildingId в пропсы
 }
 
 export const FloorMap = ({ 
@@ -49,7 +50,8 @@ export const FloorMap = ({
   onPointSave,
   onPointHover,
   hideControls = false,
-  routePointIds
+  routePointIds,
+  buildingId = 1, // ДОБАВЛЯЕМ buildingId с значением по умолчанию
 }: FloorMapProps) => {
   const [selectMode, setSelectMode] = useState<'from' | 'to'>('from');
   const [hoveredPointId, setHoveredPointId] = useState<number | null>(null);
@@ -282,6 +284,7 @@ export const FloorMap = ({
             draggedPointId={draggedPoint}
             planDimensions={planDimensions}
             routePointIds={routePointIds}
+            buildingId={buildingId}
           />
         </div>
       </div>

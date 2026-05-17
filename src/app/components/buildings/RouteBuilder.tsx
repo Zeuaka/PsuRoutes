@@ -448,6 +448,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
                   isEditMode={isEditMode}
                   onPointDrag={handlePointDrag}
                   onPointSave={savePointCoordinates}
+                  buildingId={buildingId}
                 />
               </div>
             </div>

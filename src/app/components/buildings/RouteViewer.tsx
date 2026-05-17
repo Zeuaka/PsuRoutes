@@ -342,6 +342,7 @@ export const RouteViewer = ({
                     setMapScale(scale);
                     setMapPosition(position);
                   }}
+                  buildingId={buildingId}
                 />
               </div>
             </div>

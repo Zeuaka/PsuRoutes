@@ -830,6 +830,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   allPoints={displayPoints}
                   allEdges={displayEdges}
                   hideControls={true}
+                  buildingId={buildingId}
                 />
                 <div className="point-editor-click-hint">
                   <MapPin size={20} />

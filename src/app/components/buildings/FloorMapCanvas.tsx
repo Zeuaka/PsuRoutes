@@ -32,7 +32,7 @@ const pointSizeConfig: Record<number, {
   scaleX: number;  // компенсация растяжения по горизонтали
   scaleY: number;  // компенсация растяжения по вертикали
 }> = {
-  1: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 0.65 },
+  1: { baseRadius: 1.2, textSize: 0, strokeWidth: 0.2, scaleX: 1, scaleY: 0.65 },
   2: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
   3: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
   4: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
@@ -41,7 +41,7 @@ const pointSizeConfig: Record<number, {
   7: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
   8: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
   9: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
-  10: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+  10: { baseRadius: 2, textSize: 0, strokeWidth: 0.2, scaleX: 0.5, scaleY: 1 },
   11: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
   12: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
   16: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
