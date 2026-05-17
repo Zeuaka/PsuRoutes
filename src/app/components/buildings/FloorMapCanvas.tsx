@@ -19,7 +19,33 @@ interface FloorMapCanvasProps {
   draggedPointId?: number | null;
   planDimensions?: { width: number; height: number };
   routePointIds?: Set<number>;
+  buildingId?: number;
 }
+
+// Конфигурация размеров точек для разных корпусов
+// scaleX и scaleY - коэффициенты компенсации искажения эллипса
+// При значении 1 - круг, при >1 - вытягивание по оси
+const pointSizeConfig: Record<number, { 
+  baseRadius: number; 
+  textSize: number; 
+  strokeWidth: number;
+  scaleX: number;  // компенсация растяжения по горизонтали
+  scaleY: number;  // компенсация растяжения по вертикали
+}> = {
+  1: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 0.65 },
+  2: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  3: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  4: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  5: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  6: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  7: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  8: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  9: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+  10: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+  11: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+  12: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+  16: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+};
 
 export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
   points,
@@ -39,7 +65,13 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
   draggedPointId,
   planDimensions = { width: 400, height: 400 },
   routePointIds,
+  buildingId = 1,
 }) => {
+  // Получаем базовые размеры для корпуса
+  const getBaseSizes = () => {
+    return pointSizeConfig[buildingId] || { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 };
+  };
+
   const getPointPosition = (point: Point) => {
     let x = point.x_coord ?? 50;
     let y = point.y_coord ?? 50;
@@ -64,51 +96,66 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
     const isStaircase = point.type === 2 || point.type === 4 || point.type === 6;
     const isDragged = draggedPointId === point.id;
 
+    const baseConfig = getBaseSizes();
+    let radiusX = baseConfig.baseRadius;
+    let radiusY = baseConfig.baseRadius;
+    let strokeWidth = baseConfig.strokeWidth;
+    let textSize = baseConfig.textSize;
+
     let fill = '#9ca3af';
     let stroke = '#6b7280';
-    let radius = 1.2;
-    let strokeWidth = 0.2;
 
     if (isCurrent) {
       fill = '#f97316';
       stroke = '#c2410c';
-      radius = 2.0;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.6;
+      radiusY = baseConfig.baseRadius * 1.6;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isSelectedFrom) {
       fill = '#3b82f6';
       stroke = '#1e40af';
-      radius = 1.8;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.5;
+      radiusY = baseConfig.baseRadius * 1.5;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isSelectedTo) {
       fill = '#ef4444';
       stroke = '#b91c1c';
-      radius = 1.8;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.5;
+      radiusY = baseConfig.baseRadius * 1.5;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isInPath) {
       fill = '#22c55e';
       stroke = '#15803d';
-      radius = 1.5;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.3;
+      radiusY = baseConfig.baseRadius * 1.3;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isStaircase) {
       fill = '#f59e0b';
       stroke = '#d97706';
-      radius = 1.5;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.3;
+      radiusY = baseConfig.baseRadius * 1.3;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isHovered) {
       fill = '#f59e0b';
-      radius = 1.5;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.3;
+      radiusY = baseConfig.baseRadius * 1.3;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isDragged) {
       fill = '#8b5cf6';
       stroke = '#6d28d9';
-      radius = 2.0;
-      strokeWidth = 0.3;
+      radiusX = baseConfig.baseRadius * 1.6;
+      radiusY = baseConfig.baseRadius * 1.6;
+      strokeWidth = baseConfig.strokeWidth * 1.5;
     }
 
-    const textX = radius + 0.8;
-    const textY = radius - 1.5;
+    // Применяем коэффициенты компенсации искажения
+    radiusX = radiusX * baseConfig.scaleX;
+    radiusY = radiusY * baseConfig.scaleY;
 
-    return { fill, stroke, radius, strokeWidth, textX, textY };
+    const textX = (radiusX + 0.8) * (baseConfig.scaleX);
+    const textY = (radiusY - 1.5) * (baseConfig.scaleY);
+
+    return { fill, stroke, radiusX, radiusY, strokeWidth, textX, textY, textSize };
   };
 
   return (
@@ -135,6 +182,9 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
         const to = getPointPosition(toPoint);
         const isInPath = pathEdgeIds.has(edge.id);
 
+        const baseConfig = getBaseSizes();
+        const lineWidth = isInPath ? baseConfig.baseRadius * 1.0 : baseConfig.baseRadius * 0.5;
+
         return (
           <line
             key={`edge-${edge.id}`}
@@ -143,7 +193,7 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
             x2={to.x}
             y2={to.y}
             stroke={isInPath ? '#22c55e' : '#9ca3af'}
-            strokeWidth={isInPath ? 1.2 : 0.6}
+            strokeWidth={lineWidth}
             strokeDasharray={isInPath ? 'none' : '2 1'}
             className="floor-map-line"
           />
@@ -176,8 +226,9 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
               }
             }}
           >
-            <circle
-              r={style.radius}
+            <ellipse
+              rx={style.radiusX}
+              ry={style.radiusY}
               fill={style.fill}
               stroke={style.stroke}
               strokeWidth={style.strokeWidth}
@@ -186,7 +237,7 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
             <text
               x={style.textX}
               y={style.textY}
-              fontSize="2.5"
+              fontSize={style.textSize}
               fill="#374151"
               fontWeight="500"
               className="floor-map-text"
