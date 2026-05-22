@@ -24,24 +24,39 @@ interface RouteViewerProps {
   onNewRoute: () => void;
 }
 
+// Хардкод маппинг точек с панорамами (из PanoramaViewer)
+const panoramaPointIds: Set<number> = new Set([
+  // Корпус 1 - 1 этаж
+  101001, 101006, 101007, 101002, 101008, 101009, 101010, 101011, 101012, 101013,
+  101014, 101015, 101016, 101017, 101018,
+  // Корпус 1 - 2 этаж
+  11312, 102314, 11303, 11219, 11210, 11218, 11211, 11283, 11214, 11293, 11297, 11212,
+  // Корпус 1 - 3 этаж
+  11338, 11316, 11321, 11390, 11315, 11395, 11314, 11318, 11405, 11317, 11323,
+  // Корпус 1 - 4 этаж
+  11422, 11488, 11493, 11421, 11420, 11419, 11477, 11425, 11416, 11415, 11417, 11418,
+  // Корпус 10
+  1001002, 1001004, 1001005, 1001003, 1001006,
+]);
+
 // Функция для проверки, является ли точка "важной" для телепортации
-function isImportantPoint(point: Point, panoramas: Panorama[]): boolean {
+function isImportantPoint(point: Point): boolean {
   // Тип 1 - аудитории/холлы/столовые
   const isType1 = point.type === 1;
   // Лестницы (типы 2,4,6)
   const isStaircase = point.type === 2 || point.type === 4 || point.type === 6;
   // Переходы между корпусами (тип 7)
   const isTransition = point.type === 7;
-  // Точки с панорамой
-  const hasPanorama = panoramas.some(p => p.point_id === point.id);
+  // Точки с панорамой (из хардкод маппинга)
+  const hasPanorama = panoramaPointIds.has(point.id);
   
   return isType1 || isStaircase || isTransition || hasPanorama;
 }
 
 // Функция для получения следующей важной точки
-function getNextImportantPoint(currentIndex: number, points: Point[], panoramas: Panorama[]): number {
+function getNextImportantPoint(currentIndex: number, points: Point[]): number {
   for (let i = currentIndex + 1; i < points.length; i++) {
-    if (isImportantPoint(points[i], panoramas)) {
+    if (isImportantPoint(points[i])) {
       return i;
     }
   }
@@ -49,9 +64,9 @@ function getNextImportantPoint(currentIndex: number, points: Point[], panoramas:
 }
 
 // Функция для получения предыдущей важной точки
-function getPrevImportantPoint(currentIndex: number, points: Point[], panoramas: Panorama[]): number {
+function getPrevImportantPoint(currentIndex: number, points: Point[]): number {
   for (let i = currentIndex - 1; i >= 0; i--) {
-    if (isImportantPoint(points[i], panoramas)) {
+    if (isImportantPoint(points[i])) {
       return i;
     }
   }
@@ -82,7 +97,7 @@ export const RouteViewer = ({
 
   const currentPoint = path.points[currentStep];
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
-  const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
+  const hasCurrentPanorama = currentPoint ? panoramaPointIds.has(currentPoint.id) : false;
   const currentBuildingId = currentPoint?.building_id;
   
   const getFloorPlanUrl = () => {
@@ -127,7 +142,7 @@ export const RouteViewer = ({
 
   // Телепортируемся к следующей важной точке
   const goToNextStep = () => {
-    const nextImportantIndex = getNextImportantPoint(currentStep, path.points, panoramas);
+    const nextImportantIndex = getNextImportantPoint(currentStep, path.points);
     if (nextImportantIndex !== currentStep) {
       setCurrentStep(nextImportantIndex);
       const nextPoint = path.points[nextImportantIndex];
@@ -140,7 +155,7 @@ export const RouteViewer = ({
 
   // Телепортируемся к предыдущей важной точке
   const goToPrevStep = () => {
-    const prevImportantIndex = getPrevImportantPoint(currentStep, path.points, panoramas);
+    const prevImportantIndex = getPrevImportantPoint(currentStep, path.points);
     if (prevImportantIndex !== currentStep) {
       setCurrentStep(prevImportantIndex);
       const prevPoint = path.points[prevImportantIndex];
