@@ -45,13 +45,11 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [allBuildingsPoints, setAllBuildingsPoints] = useState<Point[]>([]);
   const [loadingAllPoints, setLoadingAllPoints] = useState(false);
   
-  // Данные для маршрута (загружаются при выборе точки, но НЕ отображаются на карте до построения)
   const [extraPoints, setExtraPoints] = useState<Point[]>([]);
   const [extraEdges, setExtraEdges] = useState<Edge[]>([]);
   const [extraFloors, setExtraFloors] = useState<Floor[]>([]);
   const [loadedBuildings, setLoadedBuildings] = useState<Set<number>>(new Set([buildingId]));
 
-  // Загрузка данных текущего корпуса
   useEffect(() => {
     const loadBuildingData = async () => {
       setLoading(true);
@@ -73,7 +71,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     loadBuildingData();
   }, [buildingId]);
 
-  // Загрузка всех точек для поиска (без рёбер)
   useEffect(() => {
     const loadAllPoints = async () => {
       setLoadingAllPoints(true);
@@ -89,7 +86,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     loadAllPoints();
   }, []);
 
-  // Функция загрузки данных другого корпуса
   const loadBuildingDataIfNeeded = async (targetBuildingId: number) => {
     if (loadedBuildings.has(targetBuildingId)) return;
     
@@ -110,12 +106,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     }
   };
 
-  // Объединённые данные для ПОСТРОЕНИЯ МАРШРУТА (не для отображения на карте)
   const combinedPointsForPath = [...allPoints, ...extraPoints];
   const combinedEdgesForPath = [...allEdges, ...extraEdges];
   const combinedFloorsForPath = [...floors, ...extraFloors];
 
-  // Данные для ОТОБРАЖЕНИЯ на карте (только текущий корпус, без точек из других корпусов)
   const updateDisplayPoints = () => {
     const currentFloorPoints = allPoints.filter(p => {
       const pf = floors.find(f => f.id === p.floor_id);
@@ -181,23 +175,45 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   };
 
   const handleFindPath = () => {
-    if (selectedFromPoint && selectedToPoint && combinedPointsForPath.length && combinedEdgesForPath.length) {
-      console.log(`Поиск пути от ${selectedFromPoint} до ${selectedToPoint}`);
-      console.log(`Всего точек: ${combinedPointsForPath.length}, рёбер: ${combinedEdgesForPath.length}`);
-      
-      const result = findShortestPath(combinedPointsForPath, combinedEdgesForPath, selectedFromPoint, selectedToPoint);
-      if (result) {
-        const pointIds = new Set(result.points.map(p => p.id));
-        setRoutePointIds(pointIds);
-        setIsRouteMode(true);
-        setPathResult(result);
-        setRenderKey(prev => prev + 1);
-        setShowRouteViewer(true);
-      } else {
-        alert('Путь не найден');
-      }
+  if (selectedFromPoint && selectedToPoint && combinedPointsForPath.length && combinedEdgesForPath.length) {
+    // Находим точки начала и конца
+    const fromPoint = combinedPointsForPath.find(p => p.id === selectedFromPoint);
+    const toPoint = combinedPointsForPath.find(p => p.id === selectedToPoint);
+    
+    if (!fromPoint || !toPoint) {
+      alert('Точки не найдены');
+      return;
     }
-  };
+    
+    // Проверяем, находятся ли обе точки в одном корпусе и на одном этаже
+    const isSameBuilding = fromPoint.building_id === toPoint.building_id;
+    const isSameFloor = fromPoint.floor_id === toPoint.floor_id;
+    const shouldStayOnSameFloor = isSameBuilding && isSameFloor;
+    
+    console.log(`Поиск пути от ${selectedFromPoint} до ${selectedToPoint}`);
+    console.log(`Всего точек: ${combinedPointsForPath.length}, рёбер: ${combinedEdgesForPath.length}`);
+    console.log(`Запрет межэтажных переходов: ${shouldStayOnSameFloor}`);
+    
+    const result = findShortestPath(
+      combinedPointsForPath, 
+      combinedEdgesForPath, 
+      selectedFromPoint, 
+      selectedToPoint,
+      shouldStayOnSameFloor  // передаём флаг запрета межэтажных переходов
+    );
+    
+    if (result) {
+      const pointIds = new Set(result.points.map(p => p.id));
+      setRoutePointIds(pointIds);
+      setIsRouteMode(true);
+      setPathResult(result);
+      setRenderKey(prev => prev + 1);
+      setShowRouteViewer(true);
+    } else {
+      alert('Путь не найден');
+    }
+  }
+};
 
   const handleResetPath = () => {
     setSelectedFromPoint(null);

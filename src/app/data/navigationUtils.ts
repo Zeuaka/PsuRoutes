@@ -10,9 +10,9 @@ export interface PathResult {
 
 function getPointSpeed(point: Point): number {
   if (point.type === 4 || point.type === 6) {
-    return 2; // км/ч для лестниц
+    return 2;
   }
-  return 4; // км/ч для обычных точек
+  return 4;
 }
 
 function calculateDuration(edge: Edge, fromPoint: Point, toPoint: Point): number {
@@ -26,7 +26,8 @@ export function findShortestPath(
   points: Point[],
   edges: Edge[],
   startPointId: number,
-  endPointId: number
+  endPointId: number,
+  forbidFloorTransition: boolean = false
 ): PathResult | null {
   const pointMap = new Map(points.map(p => [p.id, p]));
   
@@ -39,6 +40,11 @@ export function findShortestPath(
     const toPoint = pointMap.get(edge.to_point_id);
     
     if (!fromPoint || !toPoint) return;
+    
+    // Если запрещены межэтажные переходы и ребро является переходом - пропускаем
+    if (forbidFloorTransition && edge.floor_transition) {
+      return;
+    }
     
     const distance = Number(edge.distance_meters) || 0;
     const duration = calculateDuration(edge, fromPoint, toPoint);
