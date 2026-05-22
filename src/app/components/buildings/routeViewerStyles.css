@@ -1,5 +1,3 @@
-/* src/components/buildings/routeViewerStyles.css */
-
 /* Контейнер всей страницы */
 .route-viewer-container {
   width: 100%;
@@ -255,39 +253,6 @@
   font-size: 1rem;
 }
 
-.route-viewer-search-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.route-viewer-search-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.route-viewer-search-selector {
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  background-color: white;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.route-viewer-search-selector:hover {
-  border-color: #a2a4a9;
-}
-
-.route-viewer-search-placeholder {
-  color: #9ca3af;
-  font-size: 0.875rem;
-}
-
 /* Подсказка */
 .route-viewer-hint {
   font-size: 0.7rem;
@@ -306,14 +271,14 @@
   flex-shrink: 0;
 }
 
-/* Выбор этажа в сайдбаре */
-.route-viewer-floor-select-sidebar {
+/* Информация о текущем этаже (стиль как у ползунка, но readonly) */
+.route-viewer-floor-info {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid #e5e7eb;
 }
 
-.floor-select-label {
+.floor-info-label {
   font-size: 0.75rem;
   font-weight: 500;
   color: #6b7280;
@@ -321,40 +286,47 @@
   margin-bottom: 0.5rem;
 }
 
-.floor-select-wrapper {
+.floor-info-wrapper {
   position: relative;
   width: 100%;
 }
 
-.floor-select-dropdown {
+.floor-info-display {
   width: 100%;
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #363636;
-  background-color: white;
+  color: #1f2937;
+  background-color: #f3f4f6;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  appearance: none;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.floor-select-dropdown:hover {
-  border-color: #a2a4a9;
+.floor-info-number {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.floor-select-dropdown:focus {
-  outline: none;
-}
-
-.floor-select-icon {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
+.floor-info-building {
+  font-size: 0.7rem;
   color: #6b7280;
-  pointer-events: none;
+  font-weight: normal;
+}
+
+.floor-info-icon {
+  color: #9ca3af;
+}
+
+.floor-info-hint {
+  font-size: 0.65rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+  text-align: left;
 }
 
 /* Карта */

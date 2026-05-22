@@ -24,6 +24,40 @@ interface RouteViewerProps {
   onNewRoute: () => void;
 }
 
+// Функция для проверки, является ли точка "важной" для телепортации
+function isImportantPoint(point: Point, panoramas: Panorama[]): boolean {
+  // Тип 1 - аудитории/холлы/столовые
+  const isType1 = point.type === 1;
+  // Лестницы (типы 2,4,6)
+  const isStaircase = point.type === 2 || point.type === 4 || point.type === 6;
+  // Переходы между корпусами (тип 7)
+  const isTransition = point.type === 7;
+  // Точки с панорамой
+  const hasPanorama = panoramas.some(p => p.point_id === point.id);
+  
+  return isType1 || isStaircase || isTransition || hasPanorama;
+}
+
+// Функция для получения следующей важной точки
+function getNextImportantPoint(currentIndex: number, points: Point[], panoramas: Panorama[]): number {
+  for (let i = currentIndex + 1; i < points.length; i++) {
+    if (isImportantPoint(points[i], panoramas)) {
+      return i;
+    }
+  }
+  return currentIndex;
+}
+
+// Функция для получения предыдущей важной точки
+function getPrevImportantPoint(currentIndex: number, points: Point[], panoramas: Panorama[]): number {
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    if (isImportantPoint(points[i], panoramas)) {
+      return i;
+    }
+  }
+  return currentIndex;
+}
+
 export const RouteViewer = ({ 
   buildingId, 
   buildingName, 
@@ -49,32 +83,26 @@ export const RouteViewer = ({
   const currentPoint = path.points[currentStep];
   const currentFloorObj = currentPoint ? floors.find(f => f.id === currentPoint.floor_id) : null;
   const hasCurrentPanorama = currentPoint ? panoramas.some(p => p.point_id === currentPoint.id) : false;
+  const currentBuildingId = currentPoint?.building_id;
   
-  // Получаем URL плана этажа для текущей точки
   const getFloorPlanUrl = () => {
     if (!currentFloorObj) return undefined;
-    // Ищем этаж по floor_id текущей точки
     const floor = floors.find(f => f.id === currentPoint?.floor_id);
     return floor?.floor_plan_url;
   };
   
   const floorPlanUrl = getFloorPlanUrl();
-  
-  // Точки маршрута (все точки, которые входят в маршрут)
   const routePointIds = new Set(path.points.map(p => p.id));
   
-  // Получаем все точки, которые находятся на текущем этаже И входят в маршрут
   const getPointsOnCurrentFloor = () => {
     const currentFloorId = currentPoint?.floor_id;
     if (!currentFloorId) return [];
     
-    // Фильтруем точки: только те, что на текущем этаже и в маршруте
     return allPoints.filter(p => 
       p.floor_id === currentFloorId && routePointIds.has(p.id)
     );
   };
   
-  // Получаем рёбра, которые полностью находятся на текущем этаже и входят в маршрут
   const getEdgesOnCurrentFloor = () => {
     const currentFloorId = currentPoint?.floor_id;
     if (!currentFloorId) return [];
@@ -89,7 +117,6 @@ export const RouteViewer = ({
   const pointsOnCurrentFloor = getPointsOnCurrentFloor();
   const edgesOnCurrentFloor = getEdgesOnCurrentFloor();
 
-  // Обогащаем точки маршрута информацией о текущем шаге
   const enhancedPath = {
     ...path,
     points: path.points.map((point, idx) => ({
@@ -98,11 +125,12 @@ export const RouteViewer = ({
     }))
   };
 
+  // Телепортируемся к следующей важной точке
   const goToNextStep = () => {
-    if (currentStep < path.points.length - 1) {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-      const nextPoint = path.points[nextStep];
+    const nextImportantIndex = getNextImportantPoint(currentStep, path.points, panoramas);
+    if (nextImportantIndex !== currentStep) {
+      setCurrentStep(nextImportantIndex);
+      const nextPoint = path.points[nextImportantIndex];
       const nextPointFloor = floors.find(f => f.id === nextPoint.floor_id);
       if (nextPointFloor) {
         setSelectedFloor(nextPointFloor.floor_number);
@@ -110,11 +138,12 @@ export const RouteViewer = ({
     }
   };
 
+  // Телепортируемся к предыдущей важной точке
   const goToPrevStep = () => {
-    if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      setCurrentStep(prevStep);
-      const prevPoint = path.points[prevStep];
+    const prevImportantIndex = getPrevImportantPoint(currentStep, path.points, panoramas);
+    if (prevImportantIndex !== currentStep) {
+      setCurrentStep(prevImportantIndex);
+      const prevPoint = path.points[prevImportantIndex];
       if (prevPoint) {
         const prevPointFloor = floors.find(f => f.id === prevPoint.floor_id);
         if (prevPointFloor) setSelectedFloor(prevPointFloor.floor_number);
@@ -125,7 +154,6 @@ export const RouteViewer = ({
   const handleFloorTransition = (targetFloor: number, fromPointId?: number) => {
     setSelectedFloor(targetFloor);
     if (fromPointId) {
-      // Ищем следующую точку на целевом этаже
       const nextPointOnTargetFloor = allPoints.find(p => {
         if (p.floor_id !== targetFloor) return false;
         const hasConnection = allEdges.some(e => 
@@ -190,7 +218,6 @@ export const RouteViewer = ({
     );
   }
 
-  // Текущий этаж для отображения
   const displayFloorNumber = currentFloorObj?.floor_number || selectedFloor;
 
   return (
@@ -293,21 +320,23 @@ export const RouteViewer = ({
             <ArrowDownUp /> Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
           </p>
 
-          <div className="route-viewer-floor-select-sidebar">
-            <label className="floor-select-label">Выберите этаж:</label>
-            <div className="floor-select-wrapper">
-              <select
-                value={displayFloorNumber}
-                onChange={(e) => setSelectedFloor(Number(e.target.value))}
-                className="floor-select-dropdown"
-              >
-                {floors.map(floor => (
-                  <option key={floor.id} value={floor.floor_number}>
-                    {floor.floor_number} этаж
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="floor-select-icon" />
+          <div className="route-viewer-floor-info">
+            <label className="floor-info-label">Текущий этаж:</label>
+            <div className="floor-info-wrapper">
+              <div className="floor-info-display">
+                <span className="floor-info-number">
+                  {displayFloorNumber}
+                  {currentBuildingId !== buildingId && (
+                    <span className="floor-info-building">(Корпус {currentBuildingId})</span>
+                  )}
+                </span>
+                <span className="floor-info-icon">
+                  <ChevronDown size={16} style={{ opacity: 0.5 }} />
+                </span>
+              </div>
+            </div>
+            <div className="floor-info-hint">
+              Используйте кнопки "Назад/Вперед" для перемещения
             </div>
           </div>
           
@@ -342,7 +371,7 @@ export const RouteViewer = ({
                     setMapScale(scale);
                     setMapPosition(position);
                   }}
-                  buildingId={buildingId}
+                  buildingId={currentBuildingId || buildingId}
                 />
               </div>
             </div>
