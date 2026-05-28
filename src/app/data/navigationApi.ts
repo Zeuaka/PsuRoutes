@@ -61,3 +61,9 @@ export async function fetchAllPoints(): Promise<Point[]> {
   const data = await res.json();
   return data;
 }
+
+export async function fetchAllBuildings(): Promise<Building[]> {
+  const res = await fetch(`${API_BASE}/buildings`);
+  if (!res.ok) return [];
+  return res.json();
+}

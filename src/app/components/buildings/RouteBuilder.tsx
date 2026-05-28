@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { PanoramaViewer } from './PanoramaViewer';
 import { FloorMap } from './FloorMap';
 import { RouteViewer } from './RouteViewer';
-import { fetchPointsByBuilding, fetchEdgesByBuilding, fetchFloorsByBuilding, fetchAllPoints } from '../../data/navigationApi';
+import { fetchPointsByBuilding, fetchEdgesByBuilding, fetchFloorsByBuilding, fetchAllPoints, fetchAllBuildings } from '../../data/navigationApi';
 import { findShortestPath, PathResult } from '../../data/navigationUtils';
-import { Point, Edge, Floor } from '../../data/navigationData';
+import { Point, Edge, Floor, Building } from '../../data/navigationData';
 import './routeBuilderStyles.css';
 
 interface RouteBuilderProps {
@@ -45,11 +45,55 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [allBuildingsPoints, setAllBuildingsPoints] = useState<Point[]>([]);
   const [loadingAllPoints, setLoadingAllPoints] = useState(false);
   
-  const [extraPoints, setExtraPoints] = useState<Point[]>([]);
-  const [extraEdges, setExtraEdges] = useState<Edge[]>([]);
-  const [extraFloors, setExtraFloors] = useState<Floor[]>([]);
-  const [loadedBuildings, setLoadedBuildings] = useState<Set<number>>(new Set([buildingId]));
+  // Все данные для построения маршрута
+  const [globalPoints, setGlobalPoints] = useState<Point[]>([]);
+  const [globalEdges, setGlobalEdges] = useState<Edge[]>([]);
+  const [globalFloors, setGlobalFloors] = useState<Floor[]>([]);
+  const [loadingGlobal, setLoadingGlobal] = useState(true);
+  const [globalDataLoaded, setGlobalDataLoaded] = useState(false);
 
+  // Загрузка данных ВСЕХ корпусов при монтировании
+  useEffect(() => {
+    const loadAllBuildingsData = async () => {
+      setLoadingGlobal(true);
+      try {
+        // Получаем список всех корпусов
+        const buildings = await fetchAllBuildings();
+        
+        let allPointsData: Point[] = [];
+        let allEdgesData: Edge[] = [];
+        let allFloorsData: Floor[] = [];
+        
+        // Загружаем данные для каждого корпуса
+        for (const building of buildings) {
+          console.log(`Загрузка данных для корпуса ${building.id}...`);
+          const [pointsData, edgesData, floorsData] = await Promise.all([
+            fetchPointsByBuilding(building.id),
+            fetchEdgesByBuilding(building.id),
+            fetchFloorsByBuilding(building.id),
+          ]);
+          allPointsData = [...allPointsData, ...pointsData];
+          allEdgesData = [...allEdgesData, ...edgesData];
+          allFloorsData = [...allFloorsData, ...floorsData];
+          console.log(`  - Точки: ${pointsData.length}, рёбра: ${edgesData.length}, этажи: ${floorsData.length}`);
+        }
+        
+        setGlobalPoints(allPointsData);
+        setGlobalEdges(allEdgesData);
+        setGlobalFloors(allFloorsData);
+        setGlobalDataLoaded(true);
+        console.log(`ИТОГО: ${allPointsData.length} точек, ${allEdgesData.length} рёбер, ${allFloorsData.length} этажей`);
+      } catch (error) {
+        console.error('Ошибка загрузки данных всех корпусов:', error);
+      } finally {
+        setLoadingGlobal(false);
+      }
+    };
+    
+    loadAllBuildingsData();
+  }, []);
+
+  // Загрузка данных текущего корпуса для отображения карты
   useEffect(() => {
     const loadBuildingData = async () => {
       setLoading(true);
@@ -71,6 +115,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     loadBuildingData();
   }, [buildingId]);
 
+  // Загрузка всех точек для поиска (без рёбер)
   useEffect(() => {
     const loadAllPoints = async () => {
       setLoadingAllPoints(true);
@@ -85,30 +130,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     };
     loadAllPoints();
   }, []);
-
-  const loadBuildingDataIfNeeded = async (targetBuildingId: number) => {
-    if (loadedBuildings.has(targetBuildingId)) return;
-    
-    console.log(`Загрузка данных корпуса ${targetBuildingId}...`);
-    try {
-      const [pointsData, edgesData, floorsData] = await Promise.all([
-        fetchPointsByBuilding(targetBuildingId),
-        fetchEdgesByBuilding(targetBuildingId),
-        fetchFloorsByBuilding(targetBuildingId),
-      ]);
-      setExtraPoints(prev => [...prev, ...pointsData]);
-      setExtraEdges(prev => [...prev, ...edgesData]);
-      setExtraFloors(prev => [...prev, ...floorsData]);
-      setLoadedBuildings(prev => new Set([...prev, targetBuildingId]));
-      console.log(`Загружено ${pointsData.length} точек, ${edgesData.length} рёбер и ${floorsData.length} этажей для корпуса ${targetBuildingId}`);
-    } catch (error) {
-      console.error(`Ошибка загрузки корпуса ${targetBuildingId}:`, error);
-    }
-  };
-
-  const combinedPointsForPath = [...allPoints, ...extraPoints];
-  const combinedEdgesForPath = [...allEdges, ...extraEdges];
-  const combinedFloorsForPath = [...floors, ...extraFloors];
 
   const updateDisplayPoints = () => {
     const currentFloorPoints = allPoints.filter(p => {
@@ -156,14 +177,8 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const handleSearchSelect = async (point: Point) => {
     if (searchTarget === 'from') {
       setSelectedFromPoint(point.id);
-      if (point.building_id !== buildingId) {
-        await loadBuildingDataIfNeeded(point.building_id);
-      }
     } else {
       setSelectedToPoint(point.id);
-      if (point.building_id !== buildingId) {
-        await loadBuildingDataIfNeeded(point.building_id);
-      }
     }
     setSearchQuery('');
     setShowSearchResults(false);
@@ -175,13 +190,29 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   };
 
   const handleFindPath = () => {
-  if (selectedFromPoint && selectedToPoint && combinedPointsForPath.length && combinedEdgesForPath.length) {
-    // Находим точки начала и конца
-    const fromPoint = combinedPointsForPath.find(p => p.id === selectedFromPoint);
-    const toPoint = combinedPointsForPath.find(p => p.id === selectedToPoint);
+    if (!selectedFromPoint || !selectedToPoint) {
+      alert('Выберите начальную и конечную точки');
+      return;
+    }
     
-    if (!fromPoint || !toPoint) {
-      alert('Точки не найдены');
+    if (!globalDataLoaded) {
+      alert('Данные всех корпусов ещё загружаются. Подождите немного...');
+      return;
+    }
+    
+    // Находим точки начала и конца в глобальных данных
+    const fromPoint = globalPoints.find(p => p.id === selectedFromPoint);
+    const toPoint = globalPoints.find(p => p.id === selectedToPoint);
+    
+    if (!fromPoint) {
+      console.error(`Точка начала ${selectedFromPoint} не найдена в глобальных данных`);
+      alert(`Точка начала не найдена в данных. ID: ${selectedFromPoint}`);
+      return;
+    }
+    
+    if (!toPoint) {
+      console.error(`Точка конца ${selectedToPoint} не найдена в глобальных данных`);
+      alert(`Точка конца не найдена в данных. ID: ${selectedToPoint}`);
       return;
     }
     
@@ -190,16 +221,17 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     const isSameFloor = fromPoint.floor_id === toPoint.floor_id;
     const shouldStayOnSameFloor = isSameBuilding && isSameFloor;
     
-    console.log(`Поиск пути от ${selectedFromPoint} до ${selectedToPoint}`);
-    console.log(`Всего точек: ${combinedPointsForPath.length}, рёбер: ${combinedEdgesForPath.length}`);
-    console.log(`Запрет межэтажных переходов: ${shouldStayOnSameFloor}`);
+    console.log(`Поиск пути от ${selectedFromPoint} (${fromPoint.name}) до ${selectedToPoint} (${toPoint.name})`);
+    console.log(`Корпуса: ${fromPoint.building_id} -> ${toPoint.building_id}`);
+    console.log(`Этажи: ${fromPoint.floor_id} -> ${toPoint.floor_id}`);
+    console.log(`Всего точек: ${globalPoints.length}, рёбер: ${globalEdges.length}`);
     
     const result = findShortestPath(
-      combinedPointsForPath, 
-      combinedEdgesForPath, 
+      globalPoints, 
+      globalEdges, 
       selectedFromPoint, 
       selectedToPoint,
-      shouldStayOnSameFloor  // передаём флаг запрета межэтажных переходов
+      shouldStayOnSameFloor
     );
     
     if (result) {
@@ -212,8 +244,7 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     } else {
       alert('Путь не найден');
     }
-  }
-};
+  };
 
   const handleResetPath = () => {
     setSelectedFromPoint(null);
@@ -222,10 +253,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
     setIsRouteMode(false);
     setRoutePointIds(new Set());
     setRenderKey(prev => prev + 1);
-    setExtraPoints([]);
-    setExtraEdges([]);
-    setExtraFloors([]);
-    setLoadedBuildings(new Set([buildingId]));
   };
 
   const openSearch = (target: 'from' | 'to') => {
@@ -269,6 +296,10 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         setAllPoints(prev => prev.map(p => 
           p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
         ));
+        // Также обновляем в глобальных данных
+        setGlobalPoints(prev => prev.map(p => 
+          p.id === pointId ? { ...p, x_coord: x, y_coord: y } : p
+        ));
       } else {
         alert('Ошибка сохранения координат: ' + (data.error || 'Неизвестная ошибка'));
       }
@@ -288,12 +319,14 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const currentFloor = floors.find(f => f.floor_number === selectedFloor);
   const floorPlanUrl = currentFloor?.floor_plan_url;
 
-  if (loading || loadingAllPoints) {
+  if (loading || loadingAllPoints || loadingGlobal) {
     return (
       <div className="route-builder-spinner">
         <div className="route-builder-spinner-inner">
           <div className="route-builder-spinner-circle"></div>
-          <p className="route-builder-spinner-text">Загрузка данных корпуса...</p>
+          <p className="route-builder-spinner-text">
+            {loadingGlobal ? `Загрузка данных всех корпусов... (${globalPoints.length} точек загружено)` : 'Загрузка данных корпуса...'}
+          </p>
         </div>
       </div>
     );
@@ -305,9 +338,9 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
         buildingId={buildingId}
         buildingName={buildingName}
         path={pathResult}
-        floors={combinedFloorsForPath}
-        allPoints={combinedPointsForPath}
-        allEdges={combinedEdgesForPath}
+        floors={globalFloors}
+        allPoints={globalPoints}
+        allEdges={globalEdges}
         panoramas={panoramas}
         onBack={() => setShowRouteViewer(false)}
         onNewRoute={() => {

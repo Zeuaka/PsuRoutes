@@ -188,6 +188,16 @@ app.put('/api/points/:id', async (req, res) => {
   }
 });
 
+app.get('/api/buildings', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM buildings ORDER BY id');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // --- 6. Запускаем сервер ---
 app.listen(port, () => {
   console.log(`🚀 Сервер готов и работает на http://localhost:${port}`);
