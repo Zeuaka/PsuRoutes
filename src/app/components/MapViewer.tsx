@@ -140,8 +140,8 @@ const locations: Location[] = [
     height: '310px'
   },
   { 
-    id: '13', 
-    name: 'ЕНИ', 
+    id: '16', 
+    name: 'Естественнонаучный институт', 
     category: 'ЕНИ', 
     top: '47.72%', 
     left: '56.7%',
