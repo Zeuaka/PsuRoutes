@@ -27,11 +27,11 @@ export function findShortestPath(
   edges: Edge[],
   startPointId: number,
   endPointId: number,
-  forbidFloorTransition: boolean = false
+  preferSameFloor: boolean = false
 ): PathResult | null {
   const pointMap = new Map(points.map(p => [p.id, p]));
   
-  // Построение графа
+  // Построение графа с весами
   const graph: Record<number, { to: number; distance: number; duration: number; edge: Edge }[]> = {};
   points.forEach(p => { graph[p.id] = []; });
   
@@ -41,12 +41,15 @@ export function findShortestPath(
     
     if (!fromPoint || !toPoint) return;
     
-    // Если запрещены межэтажные переходы и ребро является переходом - пропускаем
-    if (forbidFloorTransition && edge.floor_transition) {
-      return;
+    let distance = Number(edge.distance_meters) || 0;
+    
+    // Если предпочтительнее оставаться на том же этаже, увеличиваем вес межэтажных переходов
+    if (preferSameFloor && edge.floor_transition) {
+      // Увеличиваем вес в 1000 раз, чтобы алгоритм избегал таких переходов,
+      // но не исключал их полностью, если нет другого пути
+      distance = distance * 1000;
     }
     
-    const distance = Number(edge.distance_meters) || 0;
     const duration = calculateDuration(edge, fromPoint, toPoint);
     
     graph[edge.from_point_id].push({
