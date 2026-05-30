@@ -39,7 +39,7 @@ const pointSizeConfig: Record<number, {
   5: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
   6: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
   7: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  8: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
+  8: { baseRadius: 1.3, textSize: 2.5, strokeWidth: 0.2, scaleX: 0.5, scaleY: 3 },
   9: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
   10: { baseRadius: 2, textSize: 0, strokeWidth: 0.2, scaleX: 0.5, scaleY: 1 },
   11: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
