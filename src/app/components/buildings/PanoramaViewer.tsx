@@ -340,12 +340,12 @@ const panoramaMap: Record<number, { image: string; title: string; yaw?: number; 
   1003008: { image: '/panoramas/10.3.1.jpg', title: 'У 301', yaw: 0, pitch: 0 },
 
   // ========== КОРПУС 11 ==========
-  1101007: { image: '11.1.л1.jpeg', title: '11.1.л1', yaw: 0, pitch: 0 },
-  1101010: { image: '11.1.1.jpeg', title: '11.1.1', yaw: 0, pitch: 0 },
-  1101014: { image: '11.1.2.jpeg', title: '11.1.2', yaw: 0, pitch: 0 },
-  1102001: { image: '11.1.л1.jpeg', title: 'повтор 11.1.л1', yaw: 0, pitch: 0 },
-  1102006: { image: '11.2.1.jpeg', title: '11.2.1', yaw: 0, pitch: 0 },
-  1102013: { image: '11.2.2.jpeg', title: '11.2.2', yaw: 0, pitch: 0 },
+  1101007: { image: '/panoramas/11.1.л1.jpg', title: '11.1.л1', yaw: 0, pitch: 0 },
+  1101010: { image: '/panoramas/11.1.1.jpg', title: '11.1.1', yaw: 0, pitch: 0 },
+  1101014: { image: '/panoramas/11.1.2.jpg', title: '11.1.2', yaw: 0, pitch: 0 },
+  1102001: { image: '/panoramas/11.1.л1.jpg', title: 'повтор 11.1.л1', yaw: 0, pitch: 0 },
+  1102006: { image: '/panoramas/11.2.1.jpg', title: '11.2.1', yaw: 0, pitch: 0 },
+  1102013: { image: '/panoramas/11.2.2.jpg', title: '11.2.2', yaw: 0, pitch: 0 },
 
   // ========== КОРПУС 12 ==========
   // 1 этаж
