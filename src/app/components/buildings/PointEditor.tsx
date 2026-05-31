@@ -1,5 +1,5 @@
 // src/app/components/buildings/PointEditor.tsx
-import { ArrowLeft, Plus, Save, X, MapPin, Trash2, Copy, Check, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Link, Unlink, Calculator, ArrowUpDown, Info, Eye, Camera } from 'lucide-react';
+import { Ruler, Compass, Waypoints, CirclePlus, ArrowLeft, Plus, Save, X, MapPin, Trash2, Copy, Check, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Link, Unlink, Calculator, ArrowUpDown, Info, Eye, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect, useRef } from 'react';
 import { FloorMap } from './FloorMap';
@@ -532,7 +532,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     const fromBuildingName = fromBuildingId === buildingId ? 'текущий корпус' : `корпус ${fromBuildingId}`;
     const toBuildingName = toBuildingId === buildingId ? 'текущий корпус' : `корпус ${toBuildingId}`;
     
-    alert(`✅ Переход создан!\n${fromPoint.name} (${fromBuildingName}, этаж ${fromPoint.floor_id}) → ${toPoint.name} (${toBuildingName}, этаж ${toPoint.floor_id})`);
+    alert(`Переход создан\n${fromPoint.name} (${fromBuildingName}, этаж ${fromPoint.floor_id}) → ${toPoint.name} (${toBuildingName}, этаж ${toPoint.floor_id})`);
   };
   
   // Добавление панорамы
@@ -584,7 +584,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
     setPanoramaPitch(0);
     setShowPanoramaForm(false);
     
-    alert(`✅ Панорама "${panoramaTitle}" добавлена для точки ${getPointNameById(panoramaPointId)}`);
+    alert(`Панорама "${panoramaTitle}" добавлена для точки ${getPointNameById(panoramaPointId)}`);
   };
   
   // Удаление панорамы
@@ -778,15 +778,10 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
         <div className="point-editor-header-content">
           <button onClick={onBack} className="point-editor-back-btn">
             <ArrowLeft size={20} />
-            <span>Назад к карте</span>
           </button>
           <div className="point-editor-title">
             <h1>{buildingName}</h1>
             <p>Режим добавления точек и рёбер</p>
-          </div>
-          <div className="point-editor-badge">
-            <Plus size={16} />
-            <span>Кликните на план для добавления точки</span>
           </div>
         </div>
       </div>
@@ -833,7 +828,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   buildingId={buildingId}
                 />
                 <div className="point-editor-click-hint">
-                  <MapPin size={20} />
+                  <CirclePlus size={20} />
                   <span>Кликните на план для добавления точки</span>
                 </div>
               </div>
@@ -864,68 +859,13 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
             </button>
           </div>
           
-          {/* Модальное окно с информацией о точке */}
-          {showPointInfo && selectedExistingPoint && (
-            <div className="point-editor-info-modal">
-              <div className="point-editor-info-header">
-                <div className="point-editor-info-title">
-                  <Info size={18} />
-                  <h3>Информация о точке</h3>
-                </div>
-                <button onClick={() => setShowPointInfo(false)} className="point-editor-info-close">
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="point-editor-info-content">
-                <div className="point-editor-info-field">
-                  <label>ID:</label>
-                  <span>{selectedExistingPoint.id}</span>
-                </div>
-                <div className="point-editor-info-field">
-                  <label>Название:</label>
-                  <span>{selectedExistingPoint.name}</span>
-                </div>
-                <div className="point-editor-info-field">
-                  <label>Тип:</label>
-                  <span>
-                    <span className={`point-type-badge type-${selectedExistingPoint.type}`}>
-                      {getPointTypeName(selectedExistingPoint.type)}
-                    </span>
-                  </span>
-                </div>
-                <div className="point-editor-info-field">
-                  <label>Координаты:</label>
-                  <span>X: {selectedExistingPoint.x_coord}, Y: {selectedExistingPoint.y_coord}</span>
-                </div>
-                <div className="point-editor-info-field">
-                  <label>Описание:</label>
-                  <span>{selectedExistingPoint.description || '—'}</span>
-                </div>
-                <div className="point-editor-info-field">
-                  <label>Этаж:</label>
-                  <span>{floors.find(f => f.id === selectedExistingPoint.floor_id)?.floor_number || '?'}</span>
-                </div>
-                <div className="point-editor-info-field">
-                  <label>Активна:</label>
-                  <span>{selectedExistingPoint.is_active ? '✅ Да' : '❌ Нет'}</span>
-                </div>
-                {selectedExistingPoint.panorama_id && (
-                  <div className="point-editor-info-field">
-                    <label>Панорама:</label>
-                    <span>ID: {selectedExistingPoint.panorama_id}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
           {/* Вкладка Точки */}
           {activeTab === 'points' && (
             <>
               <div className="point-editor-points-list-scrollable" ref={pointsListRef}>
                 {tempPoints.length > 0 && (
                   <div className="point-editor-new-section">
-                    <div className="point-editor-section-title">✨ Новые точки</div>
+                    <div className="point-editor-section-title">Новые точки</div>
                     {tempPoints.map(point => (
                       <div
                         key={point.id}
@@ -956,11 +896,11 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 
                 {existingPointsOnFloor.length > 0 && (
                   <div className="point-editor-existing-section">
-                    <div className="point-editor-section-title">📌 Существующие точки</div>
+                    <div className="point-editor-section-title">Существующие точки</div>
                     {existingPointsOnFloor.map(point => (
                       <div
                         key={point.id}
-                        className={`point-editor-point-item existing ${selectedExistingPoint?.id === point.id ? 'selected-info' : ''}`}
+                        className={`point-editor-point-item existing ${selectedExistingPoint?.id === point.id ? 'selected' : ''}`}
                         onClick={() => {
                           setSelectedExistingPoint(point);
                           setShowPointInfo(true);
@@ -974,9 +914,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                             <div className="point-editor-point-coords">X: {point.x_coord}, Y: {point.y_coord}</div>
                           </div>
                         </div>
-                        <div className="point-editor-point-badge">
-                          <Eye size={12} /> БД
-                        </div>
+                        <div className="point-editor-point-badge">БД</div>
                       </div>
                     ))}
                   </div>
@@ -990,6 +928,56 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 )}
               </div>
               
+              {showPointInfo && selectedExistingPoint && (
+                <div className="point-editor-info-modal">
+                  <div className="point-editor-info-header">
+                    <div className="point-editor-info-title">
+                      <Info size={16} />
+                      <h3>Информация о точке</h3>
+                    </div>
+                    <button onClick={() => setShowPointInfo(false)} className="point-editor-info-close">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="point-editor-info-content">
+                    <div className="point-editor-info-field">
+                      <label>ID:</label>
+                      <span>{selectedExistingPoint.id}</span>
+                    </div>
+                    <div className="point-editor-info-field">
+                      <label>Название:</label>
+                      <span>{selectedExistingPoint.name}</span>
+                    </div>
+                    <div className="point-editor-info-field">
+                      <label>Тип:</label>
+                      <span>{getPointTypeName(selectedExistingPoint.type)}</span>
+                    </div>
+                    <div className="point-editor-info-field">
+                      <label>Координаты:</label>
+                      <span>X: {selectedExistingPoint.x_coord}, Y: {selectedExistingPoint.y_coord}</span>
+                    </div>
+                    <div className="point-editor-info-field">
+                      <label>Описание:</label>
+                      <span>{selectedExistingPoint.description || '—'}</span>
+                    </div>
+                    <div className="point-editor-info-field">
+                      <label>Этаж:</label>
+                      <span>{floors.find(f => f.id === selectedExistingPoint.floor_id)?.floor_number || '?'}</span>
+                    </div>
+                    <div className="point-editor-info-field">
+                      <label>Активна:</label>
+                      <span>{selectedExistingPoint.is_active ? 'Да' : 'Нет'}</span>
+                    </div>
+                    {selectedExistingPoint.panorama_id && (
+                      <div className="point-editor-info-field">
+                        <label>Панорама:</label>
+                        <span>ID: {selectedExistingPoint.panorama_id}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {selectedPointId && selectedPoint && (
                 <div className="point-editor-edit-form">
                   <h3>Редактирование точки</h3>
@@ -1040,7 +1028,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
             <>
               <div className="point-editor-edges-list">
                 <div className="point-editor-edges-header">
-                  <h3>Список рёбер</h3>
                   <div className="point-editor-buttons-group">
                     <button onClick={() => {
                       setShowEdgeForm(!showEdgeForm);
@@ -1056,29 +1043,10 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                     </button>
                   </div>
                 </div>
-                
-                {existingEdgesOnFloor.length > 0 && (
-                  <div className="point-editor-existing-edges-section">
-                    <div className="point-editor-section-title">📌 Существующие рёбра</div>
-                    {existingEdgesOnFloor.map(edge => (
-                      <div key={edge.id} className="point-editor-edge-item existing">
-                        <div className="point-editor-edge-info">
-                          <span className="point-editor-edge-connection">
-                            {getPointNameById(edge.from_point_id)} → {getPointNameById(edge.to_point_id)}
-                          </span>
-                          <span className="point-editor-edge-distance">📏 {edge.distance_meters} м</span>
-                          {edge.direction_text && <span className="point-editor-edge-direction">🧭 {edge.direction_text}</span>}
-                          {edge.floor_transition && <span className="point-editor-edge-transition">🪜 Межэтажный</span>}
-                        </div>
-                        <div className="point-editor-edge-badge">БД</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
+
                 {tempEdges.length > 0 && (
                   <div className="point-editor-new-edges-section">
-                    <div className="point-editor-section-title">✨ Новые рёбра</div>
+                    <div className="point-editor-section-title">Новые рёбра</div>
                     {tempEdges.map(edge => {
                       const fromPoint = allAvailablePoints.find(p => p.id === edge.from_point_id);
                       const toPoint = allAvailablePoints.find(p => p.id === edge.to_point_id);
@@ -1090,11 +1058,17 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                             <span className="point-editor-edge-connection">
                               {getPointNameById(edge.from_point_id)} → {getPointNameById(edge.to_point_id)}
                             </span>
-                            <span className="point-editor-edge-distance">📏 {edge.distance_meters} м</span>
-                            {edge.direction_text && <span className="point-editor-edge-direction">🧭 {edge.direction_text}</span>}
+                            <span className="point-editor-edge-distance">
+                              <Ruler size={12} className="inline-icon" /> {edge.distance_meters} м
+                            </span>
+                            {edge.direction_text && (
+                              <span className="point-editor-edge-direction">
+                                <Compass size={12} className="inline-icon" /> {edge.direction_text}
+                              </span>
+                            )}
                             {isInterFloor && (
                               <span className="point-editor-edge-transition">
-                                🪜 {fromPoint?.floor_number} → {toPoint?.floor_number} этаж
+                                <Waypoints size={12} className="inline-icon" /> {fromPoint?.floor_number} → {toPoint?.floor_number} этаж
                               </span>
                             )}
                           </div>
@@ -1109,17 +1083,46 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                           </button>
                         </div>
                       );
-                    })}
-                  </div>
-                )}
-                
-                {existingEdgesOnFloor.length === 0 && tempEdges.length === 0 && (
-                  <div className="point-editor-empty">
-                    <Link size={40} />
-                    <p>Нет рёбер на этом этаже</p>
-                  </div>
-                )}
-              </div>
+                      })}
+                      </div>
+                      )}
+
+                      {existingEdgesOnFloor.length > 0 && (
+                        <div className="point-editor-existing-edges-section">
+                          <div className="point-editor-section-title">Существующие рёбра</div>
+                          {existingEdgesOnFloor.map(edge => (
+                            <div key={edge.id} className="point-editor-edge-item existing">
+                              <div className="point-editor-edge-info">
+                                <span className="point-editor-edge-connection">
+                                  {getPointNameById(edge.from_point_id)} → {getPointNameById(edge.to_point_id)}
+                                </span>
+                                <span className="point-editor-edge-distance">
+                                  <Ruler size={12} className="inline-icon" /> {edge.distance_meters} м
+                                </span>
+                                {edge.direction_text && (
+                                  <span className="point-editor-edge-direction">
+                                    <Compass size={12} className="inline-icon" /> {edge.direction_text}
+                                  </span>
+                                )}
+                                {edge.floor_transition && (
+                                  <span className="point-editor-edge-transition">
+                                    <Waypoints size={12} className="inline-icon" /> Межэтажный
+                                  </span>
+                                )}
+                              </div>
+                              <div className="point-editor-edge-badge">БД</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {existingEdgesOnFloor.length === 0 && tempEdges.length === 0 && (
+                        <div className="point-editor-empty">
+                          <Link size={40} />
+                          <p>Нет рёбер на этом этаже</p>
+                        </div>
+                      )}
+                    </div>
               
               {/* Форма добавления обычного ребра */}
               {showEdgeForm && (
@@ -1172,12 +1175,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                         </span>
                       )}
                     </div>
-                    {edgeFromPoint && edgeToPoint && edgeFromPoint !== edgeToPoint && (
-                      <div className="auto-calc-hint">
-                        <Calculator size={12} />
-                        <span>Расстояние рассчитано автоматически</span>
-                      </div>
-                    )}
                   </div>
                   <div className="point-editor-form-group">
                     <label>Текст направления</label>
@@ -1193,7 +1190,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
               {/* Форма добавления перехода (межэтажная связь) */}
               {showTransitionForm && (
                 <div className="point-editor-add-edge-form">
-                  <h3>Создать переход <span className="text-sm text-blue-500">(между этажами/корпусами)</span></h3>
+                  <h3>Создать переход <span className="text-sm text-gray-400">(между этажами/корпусами)</span></h3>
                   <div className="point-editor-form-group">
                     <label>Откуда (лестница/переход)</label>
                     <select 
@@ -1211,7 +1208,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                           return (
                             <option key={point.id} value={point.id}>
                               {point.name} (ID: {point.id}) - {isCurrentBuilding ? '' : `Корпус ${point.building_id}, `}этаж {pointFloor?.floor_number || '?'} - Тип: {point.type === 6 ? 'Лестница' : 'Переход'}
-                              {!isCurrentBuilding && ' 🔄'}
                             </option>
                           );
                         })
@@ -1236,7 +1232,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                           return (
                             <option key={point.id} value={point.id}>
                               {point.name} (ID: {point.id}) - {isCurrentBuilding ? '' : `Корпус ${point.building_id}, `}этаж {pointFloor?.floor_number || '?'} - Тип: {point.type === 6 ? 'Лестница' : 'Переход'}
-                              {!isCurrentBuilding && ' 🔄'}
                             </option>
                           );
                         })
@@ -1255,7 +1250,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                         min="0" 
                       />
                     </div>
-                    <div className="auto-calc-hint text-blue-500">
+                    <div className="auto-calc-hint text-gray-400">
                       <ArrowUpDown size={12} />
                       <span>Переход будет автоматически помечен как межэтажный</span>
                     </div>
@@ -1283,7 +1278,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
             <>
               <div className="point-editor-panoramas-list">
                 <div className="point-editor-panoramas-header">
-                  <h3>Панорамы</h3>
                   <button onClick={() => setShowPanoramaForm(!showPanoramaForm)} className="point-editor-add-panorama-btn">
                     <Camera size={14} /> {showPanoramaForm ? 'Отмена' : 'Добавить панораму'}
                   </button>
@@ -1291,7 +1285,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                 
                 {tempPanoramas.length > 0 && (
                   <div className="point-editor-new-panoramas-section">
-                    <div className="point-editor-section-title">✨ Новые панорамы</div>
+                    <div className="point-editor-section-title">Новые панорамы</div>
                     {tempPanoramas.map(panorama => (
                       <div key={panorama.id} className="point-editor-panorama-item">
                         <div className="point-editor-panorama-info">
@@ -1355,7 +1349,7 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                       className="point-editor-input" 
                       placeholder="/panoramas/example.jpg"
                     />
-                    <div className="auto-calc-hint text-blue-500">
+                    <div className="auto-calc-hint text-gray-400">
                       <Camera size={12} />
                       <span>Пример: /panoramas/corpus2_hall.jpg</span>
                     </div>

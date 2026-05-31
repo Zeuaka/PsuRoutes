@@ -175,6 +175,7 @@ export function MapViewer() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const buildingSelectorRef = useRef<HTMLDivElement>(null);
   
   // Используем хук аутентификации
   const { user, login, logout, isAdmin } = useAuth();
@@ -186,6 +187,17 @@ export function MapViewer() {
       setImageDimensions({ width: img.width, height: img.height });
     };
     img.src = mapImage;
+  }, []);
+
+  // Закрытие селектора при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (buildingSelectorRef.current && !buildingSelectorRef.current.contains(event.target as Node)) {
+        setShowBuildingSelector(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Обработчики масштабирования
@@ -301,7 +313,7 @@ export function MapViewer() {
           // Неавторизованный пользователь - только кнопка входа
           <button
             onClick={() => setShowLoginModal(true)}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all w-full"
           >
             <LogIn size={18} />
             Войти
@@ -310,39 +322,57 @@ export function MapViewer() {
           // Авторизованный пользователь
           <>
             {/* Информация о пользователе */}
-            <div className="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-3 text-sm">
+            <div className="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center text-sm">
               <span className="text-gray-700">{user.username}</span>
               {isAdmin && (
-                <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1">
-                  <Shield size={12} />
-                  Админ
-                </span>
+                <div className="relative inline-flex items-center justify-center group ml-1">
+                  <div className="bg-blue-100 text-blue-700 w-5 h-5 rounded flex items-center justify-center">
+                    <Shield size={12} />
+                  </div>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100]">
+                    Администратор
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 rotate-45"></div>
+                  </div>
+                </div>
               )}
-              <button
-                onClick={logout}
-                className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
-              >
-                <LogOut size={14} />
-                Выйти
-              </button>
+              <div className="relative inline-flex items-center justify-center group ml-3">
+                <button
+                  onClick={logout}
+                  className="text-gray-400 hover:text-red-500 transition-colors p-0.5 rounded"
+                >
+                  <LogOut size={16} />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100]">
+                  Выйти
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 rotate-45"></div>
+                </div>
+              </div>
             </div>
-            
-            {/* Кнопка добавления точек - видна только админу */}
+
+            {/* Кнопка добавления точек для админа */}
             {isAdmin && (
-              <>
+              <div className="relative w-full" ref={buildingSelectorRef}>
                 <button
                   onClick={() => setShowBuildingSelector(!showBuildingSelector)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
-                >
-                  <PlusCircle size={20} />
-                  Добавить точки
-                  <ChevronDown size={16} className={`transition-transform ${showBuildingSelector ? 'rotate-180' : ''}`} />
+                  className={`
+                    bg-[rgba(167,60,76,1)] hover:bg-[rgba(140,50,64,1)] 
+                    text-white px-4 py-2 shadow-lg flex items-center justify-between gap-2 
+                     w-full
+                    ${showBuildingSelector 
+                      ? 'rounded-b-lg rounded-t-none'
+                      : 'rounded-lg'
+                    }
+                  `}                
+                  >
+                  <div className="flex items-center gap-2">
+                    <PlusCircle size={18} />
+                    Добавить точки
+                  </div>
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${showBuildingSelector ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {/* Выпадающий список корпусов */}
                 {showBuildingSelector && (
-                  <div className="bg-white rounded-lg shadow-xl overflow-hidden w-64 animate-in slide-in-from-bottom-2">
-                    <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
+                    <div className="absolute bottom-full left-0 right-0 mb-0 bg-white overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 rounded-b-none rounded-t-lg">                    <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
                       <span className="text-sm font-medium text-gray-700">Выберите корпус</span>
                       <button
                         onClick={() => setShowBuildingSelector(false)}
@@ -362,13 +392,13 @@ export function MapViewer() {
                             <div className="font-medium text-gray-800">{location.name}</div>
                             <div className="text-xs text-gray-500">{location.category}</div>
                           </div>
-                          <PlusCircle size={16} className="text-purple-500 opacity-50" />
+                          <PlusCircle size={16} className="text-[rgba(167,60,76,1)] opacity-50" />
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </>
         )}
