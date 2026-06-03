@@ -1,9 +1,2 @@
-
-  # Создание плана карты
-
-  ## Running the code
-
-  Run `npm install` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
+Но зачем инфу про точки то вайпать было=(
   
