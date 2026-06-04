@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Point, Edge } from '../../data/navigationData';
 
 interface FloorMapCanvasProps {
@@ -29,22 +29,23 @@ const pointSizeConfig: Record<number, {
   baseRadius: number; 
   textSize: number; 
   strokeWidth: number;
+  edgeWidth: number;
   scaleX: number;  // компенсация растяжения по горизонтали
   scaleY: number;  // компенсация растяжения по вертикали
 }> = {
-  1: { baseRadius: 1.2, textSize: 0, strokeWidth: 0.2, scaleX: 1, scaleY: 0.65 },
-  2: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  3: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  4: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  5: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  6: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  7: { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 },
-  8: { baseRadius: 1.3, textSize: 2.5, strokeWidth: 0.2, scaleX: 0.5, scaleY: 3 },
-  9: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
-  10: { baseRadius: 2, textSize: 0, strokeWidth: 0.2, scaleX: 0.5, scaleY: 1 },
-  11: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
-  12: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
-  16: { baseRadius: 1.0, textSize: 2.0, strokeWidth: 0.18, scaleX: 1, scaleY: 1 },
+  1: { baseRadius: 1, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 1.15, scaleY: 0.5 }, // ок
+  2: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 1.25, scaleY: 0.7 }, // ок
+  3: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 12, scaleX: 3.25, scaleY: 1.1 }, // ок
+  4: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 6, scaleX: 1.5, scaleY: 1.75 }, // ок
+  5: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.8, scaleY: 0.5 }, // ок
+  6: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.9, scaleY: 1.2 }, // ок
+  7: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.9, scaleY: 2 }, // ок
+  8: { baseRadius: 1.3, textSize: 0, strokeWidth: 0, edgeWidth: 2.2, scaleX: 0.64, scaleY: 3 }, // ок
+  9: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 4, scaleX: 1.2, scaleY: 1.4 }, // ок
+  10: { baseRadius: 2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.54, scaleY: 1 }, // ок
+  11: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 7, scaleX: 2.6, scaleY: 2 }, // ок
+  12: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 1.8, scaleX: 0.62, scaleY: 3 }, // ок
+  16: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 1.7, scaleX: 0.6, scaleY: 1.1 }, // ок
 };
 
 export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
@@ -67,30 +68,126 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
   routePointIds,
   buildingId = 1,
 }) => {
-  // Получаем базовые размеры для корпуса
-  const getBaseSizes = () => {
-    return pointSizeConfig[buildingId] || { baseRadius: 1.2, textSize: 2.5, strokeWidth: 0.2, scaleX: 1, scaleY: 1 };
-  };
+  const getBaseSizes = useCallback(() => {
+    return pointSizeConfig[buildingId] || { 
+      baseRadius: 1.2, 
+      textSize: 2.5, 
+      strokeWidth: 0.2, 
+      edgeWidth: 0.5, 
+      scaleX: 1, 
+      scaleY: 1 
+    };
+  }, [buildingId]);
 
-  const getPointPosition = (point: Point) => {
-    let x = point.x_coord ?? 50;
-    let y = point.y_coord ?? 50;
+  const pointsPositions = useMemo(() => {
+    const positions = new Map<number, { x: number; y: number }>();
+    points.forEach(point => {
+      let x = point.x_coord ?? 50;
+      let y = point.y_coord ?? 50;
+      
+      if (x > 100 || y > 100) {
+        x = (x / planDimensions.width) * 100;
+        y = (y / planDimensions.height) * 100;
+      }
+      
+      positions.set(point.id, {
+        x: Math.min(Math.max(x, 0), 100),
+        y: Math.min(Math.max(y, 0), 100)
+      });
+    });
+    return positions;
+  }, [points, planDimensions.width, planDimensions.height]);
+
+  const pointsMap = useMemo(() => {
+    return new Map(points.map(p => [p.id, p]));
+  }, [points]);
+
+  const edgesWithPositions = useMemo(() => {
+    return edges.map(edge => {
+      const fromPos = pointsPositions.get(edge.from_point_id);
+      const toPos = pointsPositions.get(edge.to_point_id);
+      if (!fromPos || !toPos) return null;
+      return { edge, from: fromPos, to: toPos };
+    }).filter(Boolean);
+  }, [edges, pointsPositions]);
+
+  const pathData = useMemo(() => {
+    if (pathEdgeIds.size === 0) return null;
+
+    const graph = new Map<number, Map<number, number>>();
     
-    if (x > 100 || y > 100) {
-      x = (x / planDimensions.width) * 100;
-      y = (y / planDimensions.height) * 100;
+    edges.forEach(edge => {
+      if (pathEdgeIds.has(edge.id)) {
+        if (!graph.has(edge.from_point_id)) graph.set(edge.from_point_id, new Map());
+        if (!graph.has(edge.to_point_id)) graph.set(edge.to_point_id, new Map());
+        
+        graph.get(edge.from_point_id)!.set(edge.to_point_id, edge.id);
+        graph.get(edge.to_point_id)!.set(edge.from_point_id, edge.id);
+      }
+    });
+
+    if (graph.size === 0) return null;
+
+    let startNode = currentPointId && graph.has(currentPointId) 
+      ? currentPointId 
+      : Array.from(graph.entries()).find(([_, neighbors]) => neighbors.size === 1)?.[0] 
+        ?? graph.keys().next().value;
+
+    const pathNodes: number[] = [startNode];
+    const visitedEdges = new Set<number>();
+    let currentNode = startNode;
+    let prevNode: number | null = null;
+
+    while (true) {
+      const neighbors = graph.get(currentNode);
+      if (!neighbors) break;
+      
+      let nextNode: number | null = null;
+      for (const [neighbor, edgeId] of neighbors) {
+        if (neighbor !== prevNode && !visitedEdges.has(edgeId)) {
+          nextNode = neighbor;
+          visitedEdges.add(edgeId);
+          break;
+        }
+      }
+      
+      if (nextNode === null) break;
+      
+      pathNodes.push(nextNode);
+      prevNode = currentNode;
+      currentNode = nextNode;
+    }
+
+    if (pathNodes.length < 2) return null;
+    
+    let pathD = '';
+    for (let i = 0; i < pathNodes.length; i++) {
+      const pos = pointsPositions.get(pathNodes[i]);
+      if (!pos) continue;
+      
+      if (i === 0) {
+        pathD = `M ${pos.x} ${pos.y}`;
+      } else {
+        pathD += ` L ${pos.x} ${pos.y}`;
+      }
     }
     
-    x = Math.min(Math.max(x, 0), 100);
-    y = Math.min(Math.max(y, 0), 100);
-    
-    return { x, y };
-  };
+    return pathD;
+  }, [pathEdgeIds, edges, currentPointId, pointsPositions]);
 
-  const getPointStyle = (point: Point) => {
+  const visiblePoints = useMemo(() => {
+    return points.filter(point => {
+      const isInPath = pathPointIds.has(point.id);
+      const isCurrent = currentPointId === point.id;
+      const isSelected = selectedFromPoint === point.id || selectedToPoint === point.id;
+      
+      return !(isInPath && !isCurrent && !isSelected);
+    });
+  }, [points, pathPointIds, currentPointId, selectedFromPoint, selectedToPoint]);
+
+  const getPointStyle = useCallback((point: Point) => {
     const isSelectedFrom = selectedFromPoint === point.id;
     const isSelectedTo = selectedToPoint === point.id;
-    const isInPath = pathPointIds.has(point.id);
     const isCurrent = currentPointId === point.id;
     const isHovered = hoveredPointId === point.id;
     const isStaircase = point.type === 2 || point.type === 4 || point.type === 6;
@@ -103,16 +200,16 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
     let textSize = baseConfig.textSize;
 
     let fill = '#9ca3af';
-    let stroke = '#6b7280';
+    let stroke = '#000000';
 
     if (isCurrent) {
-      fill = '#f97316';
+      fill = '#ef4444';
       stroke = '#c2410c';
-      radiusX = baseConfig.baseRadius * 1.6;
-      radiusY = baseConfig.baseRadius * 1.6;
+      radiusX = baseConfig.baseRadius * 1.3;
+      radiusY = baseConfig.baseRadius * 1.3;
       strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isSelectedFrom) {
-      fill = '#3b82f6';
+      fill = '#676c74';
       stroke = '#1e40af';
       radiusX = baseConfig.baseRadius * 1.5;
       radiusY = baseConfig.baseRadius * 1.5;
@@ -123,25 +220,19 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
       radiusX = baseConfig.baseRadius * 1.5;
       radiusY = baseConfig.baseRadius * 1.5;
       strokeWidth = baseConfig.strokeWidth * 1.5;
-    } else if (isInPath) {
-      fill = '#22c55e';
-      stroke = '#15803d';
-      radiusX = baseConfig.baseRadius * 1.3;
-      radiusY = baseConfig.baseRadius * 1.3;
-      strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isStaircase) {
-      fill = '#f59e0b';
+      fill = '#9ca3af';
       stroke = '#d97706';
       radiusX = baseConfig.baseRadius * 1.3;
       radiusY = baseConfig.baseRadius * 1.3;
       strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isHovered) {
-      fill = '#f59e0b';
+      fill = '#7b818b';
       radiusX = baseConfig.baseRadius * 1.3;
       radiusY = baseConfig.baseRadius * 1.3;
       strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isDragged) {
-      fill = '#8b5cf6';
+      fill = '#9ca3af';
       stroke = '#6d28d9';
       radiusX = baseConfig.baseRadius * 1.6;
       radiusY = baseConfig.baseRadius * 1.6;
@@ -156,7 +247,14 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
     const textY = (radiusY - 1.5) * (baseConfig.scaleY);
 
     return { fill, stroke, radiusX, radiusY, strokeWidth, textX, textY, textSize };
-  };
+  }, [
+    selectedFromPoint, 
+    selectedToPoint, 
+    currentPointId, 
+    hoveredPointId, 
+    draggedPointId, 
+    getBaseSizes
+  ]);
 
   return (
     <svg
@@ -172,19 +270,13 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
         pointerEvents: 'auto',
       }}
     >
-      {/* Рёбра */}
-      {edges.map(edge => {
-        const fromPoint = points.find(p => p.id === edge.from_point_id);
-        const toPoint = points.find(p => p.id === edge.to_point_id);
-        if (!fromPoint?.x_coord || !toPoint?.x_coord) return null;
-
-        const from = getPointPosition(fromPoint);
-        const to = getPointPosition(toPoint);
+      {edgesWithPositions.map((item) => {
+        if (!item) return null;
+        const { edge, from, to } = item;
         const isInPath = pathEdgeIds.has(edge.id);
-
         const baseConfig = getBaseSizes();
-        const lineWidth = isInPath ? baseConfig.baseRadius * 1.0 : baseConfig.baseRadius * 0.5;
-
+        const edgeWidth = baseConfig.edgeWidth || 0.5;
+        
         return (
           <line
             key={`edge-${edge.id}`}
@@ -192,18 +284,24 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
             y1={from.y}
             x2={to.x}
             y2={to.y}
-            stroke={isInPath ? '#22c55e' : '#9ca3af'}
-            strokeWidth={lineWidth}
-            strokeDasharray={isInPath ? 'none' : '2 1'}
+            stroke={isInPath ? "#9ca3af" : "#9ca3af"}
+            strokeWidth={isInPath ? edgeWidth * 1.5 : edgeWidth}
+            strokeDasharray={isInPath ? "none" : "2 1"}
+            strokeLinecap="round"
             className="floor-map-line"
+            style={{ vectorEffect: 'non-scaling-stroke' }}
           />
         );
       })}
 
-      {/* Точки */}
-      {points.map(point => {
-        const pos = getPointPosition(point);
+
+
+      {visiblePoints.map(point => {
+        const pos = pointsPositions.get(point.id);
+        if (!pos) return null;
+        
         const style = getPointStyle(point);
+        if (!style) return null;
 
         return (
           <g
@@ -233,17 +331,20 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
               stroke={style.stroke}
               strokeWidth={style.strokeWidth}
               className="floor-map-circle"
+              style={{ vectorEffect: 'non-scaling-stroke' }}
             />
-            <text
-              x={style.textX}
-              y={style.textY}
-              fontSize={style.textSize}
-              fill="#374151"
-              fontWeight="500"
-              className="floor-map-text"
-            >
-              {point.name.length > 12 ? point.name.slice(0, 10) + '...' : point.name}
-            </text>
+            {style.textSize > 0 && (
+              <text
+                x={style.textX}
+                y={style.textY}
+                fontSize={style.textSize}
+                fill="#374151"
+                fontWeight="500"
+                className="floor-map-text"
+              >
+                {point.name.length > 12 ? point.name.slice(0, 10) + '...' : point.name}
+              </text>
+            )}
           </g>
         );
       })}

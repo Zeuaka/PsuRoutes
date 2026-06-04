@@ -1,5 +1,5 @@
 // src/app/components/buildings/PointEditor.tsx
-import { Ruler, Compass, Waypoints, CirclePlus, ArrowLeft, Plus, Save, X, MapPin, Trash2, Copy, Check, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Link, Unlink, Calculator, ArrowUpDown, Info, Eye, Camera } from 'lucide-react';
+import { HelpCircle, Ruler, Compass, Waypoints, CirclePlus, ArrowLeft, Plus, Save, X, MapPin, Trash2, Copy, Check, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Link, Unlink, Calculator, ArrowUpDown, Info, Eye, Camera } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useState, useEffect, useRef } from 'react';
 import { FloorMap } from './FloorMap';
@@ -827,10 +827,18 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   hideControls={true}
                   buildingId={buildingId}
                 />
-                <div className="point-editor-click-hint">
-                  <CirclePlus size={20} />
-                  <span>Кликните на план для добавления точки</span>
+              <div className="point-editor-click-hint">
+                <div className="relative inline-flex items-center justify-center group">
+                  <div className=" text-[#5b6d87] w-8 h-8 rounded-full flex items-center justify-center cursor-help hover:bg-gray-200 hover:text-[#1f2937]">
+                    <HelpCircle size={22} />
+                  </div>
+                  <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-200 text-[#1f2937] text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100]">
+                    • Кликните на план в режиме "Точки" для добавления точки.<br />
+                    • Чтобы просмотреть информацию о точке из базы данных, кликните по ней в списке "Существующие точки" в режиме "Точки", либо кликните по ней на плане в режиме "Ребра" или "Панорамы".
+                    <div className="absolute -bottom-1 left-3 w-2 h-2 bg-gray-200 rotate-45"></div>
+                  </div>
                 </div>
+              </div>
               </div>
             </div>
           </Card>
@@ -927,56 +935,6 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
                   </div>
                 )}
               </div>
-              
-              {showPointInfo && selectedExistingPoint && (
-                <div className="point-editor-info-modal">
-                  <div className="point-editor-info-header">
-                    <div className="point-editor-info-title">
-                      <Info size={16} />
-                      <h3>Информация о точке</h3>
-                    </div>
-                    <button onClick={() => setShowPointInfo(false)} className="point-editor-info-close">
-                      <X size={16} />
-                    </button>
-                  </div>
-                  <div className="point-editor-info-content">
-                    <div className="point-editor-info-field">
-                      <label>ID:</label>
-                      <span>{selectedExistingPoint.id}</span>
-                    </div>
-                    <div className="point-editor-info-field">
-                      <label>Название:</label>
-                      <span>{selectedExistingPoint.name}</span>
-                    </div>
-                    <div className="point-editor-info-field">
-                      <label>Тип:</label>
-                      <span>{getPointTypeName(selectedExistingPoint.type)}</span>
-                    </div>
-                    <div className="point-editor-info-field">
-                      <label>Координаты:</label>
-                      <span>X: {selectedExistingPoint.x_coord}, Y: {selectedExistingPoint.y_coord}</span>
-                    </div>
-                    <div className="point-editor-info-field">
-                      <label>Описание:</label>
-                      <span>{selectedExistingPoint.description || '—'}</span>
-                    </div>
-                    <div className="point-editor-info-field">
-                      <label>Этаж:</label>
-                      <span>{floors.find(f => f.id === selectedExistingPoint.floor_id)?.floor_number || '?'}</span>
-                    </div>
-                    <div className="point-editor-info-field">
-                      <label>Активна:</label>
-                      <span>{selectedExistingPoint.is_active ? 'Да' : 'Нет'}</span>
-                    </div>
-                    {selectedExistingPoint.panorama_id && (
-                      <div className="point-editor-info-field">
-                        <label>Панорама:</label>
-                        <span>ID: {selectedExistingPoint.panorama_id}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {selectedPointId && selectedPoint && (
                 <div className="point-editor-edit-form">
@@ -1407,6 +1365,63 @@ export const PointEditor = ({ buildingId, buildingName, onBack }: PointEditorPro
               )}
             </>
           )}
+
+
+          {/* Модальное окно с информацией о точке */}
+          {showPointInfo && selectedExistingPoint && (
+            <div className="point-editor-info-modal">
+              <div className="point-editor-info-header">
+                <div className="point-editor-info-title">
+                  <Info size={18} />
+                  <h3>Информация о точке</h3>
+                </div>
+                <button onClick={() => setShowPointInfo(false)} className="point-editor-info-close">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="point-editor-info-content">
+                <div className="point-editor-info-field">
+                  <label>ID:</label>
+                  <span>{selectedExistingPoint.id}</span>
+                </div>
+                <div className="point-editor-info-field">
+                  <label>Название:</label>
+                  <span>{selectedExistingPoint.name}</span>
+                </div>
+                <div className="point-editor-info-field">
+                  <label>Тип:</label>
+                  <span>
+                    <span className={`point-type-badge type-${selectedExistingPoint.type}`}>
+                      {getPointTypeName(selectedExistingPoint.type)}
+                    </span>
+                  </span>
+                </div>
+                <div className="point-editor-info-field">
+                  <label>Координаты:</label>
+                  <span>X: {selectedExistingPoint.x_coord}, Y: {selectedExistingPoint.y_coord}</span>
+                </div>
+                <div className="point-editor-info-field">
+                  <label>Описание:</label>
+                  <span>{selectedExistingPoint.description || '—'}</span>
+                </div>
+                <div className="point-editor-info-field">
+                  <label>Этаж:</label>
+                  <span>{floors.find(f => f.id === selectedExistingPoint.floor_id)?.floor_number || '?'}</span>
+                </div>
+                <div className="point-editor-info-field">
+                  <label>Активна:</label>
+                  <span>{selectedExistingPoint.is_active ? 'Да' : 'Нет'}</span>
+                </div>
+                {selectedExistingPoint.panorama_id && (
+                  <div className="point-editor-info-field">
+                    <label>Панорама:</label>
+                    <span>ID: {selectedExistingPoint.panorama_id}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
           
           {/* SQL вывод */}
           <div className="point-editor-sql-section">
