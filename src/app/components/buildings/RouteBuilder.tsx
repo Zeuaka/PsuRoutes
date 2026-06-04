@@ -8,6 +8,7 @@ import { fetchPointsByBuilding, fetchEdgesByBuilding, fetchFloorsByBuilding, fet
 import { findShortestPath, PathResult } from '../../data/navigationUtils';
 import { Point, Edge, Floor, Building } from '../../data/navigationData';
 import './routeBuilderStyles.css';
+import { useAuth } from '../../hooks/useAuth';
 
 interface RouteBuilderProps {
   buildingId: number;
@@ -51,6 +52,8 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
   const [globalFloors, setGlobalFloors] = useState<Floor[]>([]);
   const [loadingGlobal, setLoadingGlobal] = useState(true);
   const [globalDataLoaded, setGlobalDataLoaded] = useState(false);
+
+  const { user, isAdmin } = useAuth();
 
   // Загрузка данных ВСЕХ корпусов при монтировании
   useEffect(() => {
@@ -364,14 +367,24 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
 
   return (
     <div className="route-builder-container">
-      <div className="route-builder-control-buttons">
-        <button
-          onClick={() => setIsEditMode(!isEditMode)}
-          className={`edit-mode-btn ${isEditMode ? 'edit-mode-active' : 'edit-mode-inactive'}`}
-        >
-          {isEditMode ? '✏️ Режим редактирования' : '👁️ Режим просмотра'}
-        </button>
-      </div>
+      {isAdmin && (
+        <div className="route-builder-control-buttons">
+          <div className="relative inline-flex items-center justify-center group">
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              className={`edit-mode-btn ${isEditMode ? 'edit-mode-active' : 'edit-mode-inactive'}`}
+            >
+              {isEditMode ? 'Режим редактирования' : 'Режим просмотра'}
+            </button>
+            {isEditMode && (
+              <div className="absolute top-full right-0 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100]">
+                Перетаскивайте точки для изменения их координат
+                <div className="absolute -top-1 right-20 w-2 h-2 bg-gray-800 rotate-45"></div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="route-builder-header">
         <div className="route-builder-header-content">
@@ -450,10 +463,6 @@ export const RouteBuilder = ({ buildingId, buildingName, onBack }: RouteBuilderP
               Сбросить
             </button>
           </div>
-
-          <p className="route-builder-hint">
-            <ArrowDownUp /> Оранжевые точки — лестницы. Нажмите для перехода на другой этаж
-          </p>
 
           <div className="route-builder-floor-select-sidebar">
             <label className="floor-select-label">Выберите этаж:</label>

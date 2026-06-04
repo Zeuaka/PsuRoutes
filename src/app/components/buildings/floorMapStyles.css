@@ -10,6 +10,14 @@
   overflow: hidden;
 }
 
+.floor-map-circle {
+  vector-effect: non-scaling-stroke;
+}
+
+.floor-map-line {
+  vector-effect: non-scaling-stroke;
+}
+
 /* Контейнер с возможностью зума */
 .zoomable-content {
   position: relative;

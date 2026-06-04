@@ -33,19 +33,19 @@ const pointSizeConfig: Record<number, {
   scaleX: number;  // компенсация растяжения по горизонтали
   scaleY: number;  // компенсация растяжения по вертикали
 }> = {
-  1: { baseRadius: 1, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 1.15, scaleY: 0.5 }, // ок
-  2: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 1.25, scaleY: 0.7 }, // ок
-  3: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 12, scaleX: 3.25, scaleY: 1.1 }, // ок
-  4: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 6, scaleX: 1.5, scaleY: 1.75 }, // ок
-  5: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.8, scaleY: 0.5 }, // ок
-  6: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.9, scaleY: 1.2 }, // ок
-  7: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.9, scaleY: 2 }, // ок
-  8: { baseRadius: 1.3, textSize: 0, strokeWidth: 0, edgeWidth: 2.2, scaleX: 0.64, scaleY: 3 }, // ок
-  9: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 4, scaleX: 1.2, scaleY: 1.4 }, // ок
-  10: { baseRadius: 2, textSize: 0, strokeWidth: 0, edgeWidth: 3, scaleX: 0.54, scaleY: 1 }, // ок
-  11: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 7, scaleX: 2.6, scaleY: 2 }, // ок
-  12: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 1.8, scaleX: 0.62, scaleY: 3 }, // ок
-  16: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 1.7, scaleX: 0.6, scaleY: 1.1 }, // ок
+  1: { baseRadius: 1, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 1.15, scaleY: 0.5 }, // ок
+  2: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 7, scaleX: 1.25, scaleY: 0.7 }, // ок
+  3: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 14, scaleX: 3.25, scaleY: 1.1 }, // ок
+  4: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 8, scaleX: 1.5, scaleY: 1.75 }, // ок
+  5: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 0.8, scaleY: 0.5 }, // ок
+  6: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 0.9, scaleY: 1.2 }, // ок
+  7: { baseRadius: 1.2, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 0.9, scaleY: 2 }, // ок
+  8: { baseRadius: 1.3, textSize: 0, strokeWidth: 0, edgeWidth: 4.2, scaleX: 0.64, scaleY: 3 }, // ок
+  9: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 6, scaleX: 1.2, scaleY: 1.4 }, // ок
+  10: { baseRadius: 2, textSize: 0, strokeWidth: 0, edgeWidth: 5, scaleX: 0.54, scaleY: 1 }, // ок
+  11: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 9, scaleX: 2.6, scaleY: 2 }, // ок
+  12: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 3.8, scaleX: 0.62, scaleY: 3 }, // ок
+  16: { baseRadius: 1.0, textSize: 0, strokeWidth: 0, edgeWidth: 3.7, scaleX: 0.6, scaleY: 1.1 }, // ок
 };
 
 export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
@@ -221,7 +221,7 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
       radiusY = baseConfig.baseRadius * 1.5;
       strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isStaircase) {
-      fill = '#9ca3af';
+      fill = '#fb8a18';
       stroke = '#d97706';
       radiusX = baseConfig.baseRadius * 1.3;
       radiusY = baseConfig.baseRadius * 1.3;
@@ -232,10 +232,10 @@ export const FloorMapCanvas: React.FC<FloorMapCanvasProps> = ({
       radiusY = baseConfig.baseRadius * 1.3;
       strokeWidth = baseConfig.strokeWidth * 1.5;
     } else if (isDragged) {
-      fill = '#9ca3af';
+      fill = '#7b818b';
       stroke = '#6d28d9';
-      radiusX = baseConfig.baseRadius * 1.6;
-      radiusY = baseConfig.baseRadius * 1.6;
+      radiusX = baseConfig.baseRadius * 1;
+      radiusY = baseConfig.baseRadius * 1;
       strokeWidth = baseConfig.strokeWidth * 1.5;
     }
 

@@ -158,19 +158,19 @@
   position: absolute;
   bottom: 1rem;
   left: 1rem;
-  background-color: #e5e7eb;
-  backdrop-filter: blur(4px);
-  color: #1f2937;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.5rem;
   z-index: 30;
-  pointer-events: none;
-  font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: auto;
+  cursor: help;
+}
+
+.point-editor-click-hint .absolute.bottom-full {
+  max-width: 420px;
+  width: max-content;      
+  white-space: normal;
+  word-wrap: break-word;
+  text-align: left;
 }
 
 /* Правая колонка */
@@ -1212,4 +1212,5 @@
   color: #1f2937;
   font-weight: normal;
 }
+
 

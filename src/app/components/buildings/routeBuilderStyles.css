@@ -19,6 +19,7 @@
   display: flex;
   gap: 0.5rem;
   z-index: 100;
+  box-shadow: none;
 }
 
 .edit-mode-btn {
@@ -29,25 +30,25 @@
   cursor: pointer;
   transition: all 0.2s;
   border: none;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: none !important;
 }
 
 .edit-mode-active {
-  background-color: #dc2626;
+  background-color: rgb(142, 51, 65) !important;
   color: white;
 }
 
 .edit-mode-active:hover {
-  background-color: #b91c1c;
+  background-color: rgb(130, 46, 58) !important;
 }
 
 .edit-mode-inactive {
-  background-color: #10b981;
+  background-color: rgb(142, 51, 65);
   color: white;
 }
 
 .edit-mode-inactive:hover {
-  background-color: #059669;
+  background-color: rgb(130, 46, 58);
 }
 
 .refresh-btn {
@@ -665,7 +666,6 @@
   color: #6b7280;
 }
 
-/* мобилки */
 @media (max-width: 768px) {
     .route-builder-container {
     height: 100%;
@@ -681,8 +681,8 @@
     overflow-y: visible;
     overflow-x: hidden;
     padding-bottom: 1rem;
-    flex: 1; /* Растягиваем на всю доступную высоту */
-    min-height: 0; /* Важно для flex-детей */
+    flex: 1;
+    min-height: 0;
   }
 
   .route-builder-sidebar {
@@ -693,19 +693,11 @@
   }
 
   .route-builder-map-area {
-    flex: 1; /* Занимает всё доступное пространство */
+    flex: 1;
     order: 1;
-    min-height: 0; /* Важно для правильного расчёта высоты */
+    min-height: 0;
     width: 100%;
     overflow: visible;
-  }
-
-  .route-builder-control-buttons {
-    position: fixed;
-    bottom: 1rem;
-    top: auto;
-    right: 1rem;
-    z-index: 100;
   }
 
   .edit-mode-btn,
@@ -714,7 +706,6 @@
     font-size: 0.7rem;
   }
 
-  /* Переключатель этажей - горизонтальный скролл на мобильных */
   .floor-tabs-buttons {
     display: flex;
     overflow-x: auto;
@@ -729,7 +720,6 @@
     flex-shrink: 0;
   }
 
-  /* Отступы на мобильных */
   .route-builder-sidebar {
     padding: 0.75rem;
   }
@@ -739,7 +729,6 @@
   }
 }
 
-/* Для очень маленьких экранов (телефоны) */
 @media (max-width: 480px) {
   .route-builder-header-content {
     padding: 0.75rem 1rem;
